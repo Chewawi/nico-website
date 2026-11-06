@@ -13,3 +13,7 @@ node_modules/
 
 # raw green-screen source of the dark fountain, if you have it locally
 src/assets/dark.mp4
+
+# editor and agent files, kept local
+.vscode/
+AGENTS.md

@@ -38,7 +38,11 @@ function sync(logger: Logger): string {
 			git(['reset', '--quiet', '--hard', 'FETCH_HEAD'], dir);
 			git(['clean', '--quiet', '-fdx'], dir); // mirror the repo exactly, nothing left over
 		} else {
+			// blob-less, not shallow: the whole history is there for addedTimes(), pictures download only for checkout
 			git(['clone', '--quiet', '--filter=blob:none', '--branch', BRANCH, `https://github.com/${REPO}.git`, dir]);
+		}
+		if (git(['rev-parse', '--is-shallow-repository'], dir).toString().trim() === 'true') {
+			git(['fetch', '--quiet', '--unshallow', '--filter=blob:none', 'origin', BRANCH], dir);
 		}
 		logger.info(`Synced the drawings from github.com/${REPO} (${BRANCH})`);
 	} catch (error) {
@@ -143,6 +147,7 @@ export function drawingsLoader(): Loader {
 				// sidecars match their drawing case-insensitively, so "faro png.txt" still finds "Faro PNG.png"
 				const texts = new Map(files.filter((f) => /\.txt$/i.test(f)).map((f) => [f.slice(0, -4).toLowerCase(), f]));
 				const added = addedTimes(dir);
+				if (!added.size && existsSync(path.join(dir, '.git'))) logger.warn("Couldn't read the drawings' git history, so they're in alphabetical order");
 
 				const matched = new Set<string>();
 				const drawings = files
