@@ -58,7 +58,10 @@ export function isAdmin(request: Request) {
 	}
 	const a = new TextEncoder().encode(given);
 	const b = new TextEncoder().encode(password);
-	return a.length === b.length && crypto.subtle.timingSafeEqual(a, b);
+	if (a.length !== b.length) return false;
+	let diff = 0;
+	for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+	return diff === 0;
 }
 
 export const unauthorized = () =>

@@ -4,6 +4,11 @@ import cloudflare from '@astrojs/cloudflare';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
 
+// Cloudflare's local runtime (workerd) needs glibc. On musl systems, `astro dev` runs
+// without the adapter and uses a SQLite stand-in for D1 instead. Builds always use Cloudflare.
+const glibc = Boolean(process.report?.getReport().header.glibcVersionRuntime);
+const localRuntime = process.argv.includes('dev') && !glibc;
+
 const local = (name, cssVariable, fallbacks, variants) => ({
 	provider: fontProviders.local(),
 	name,
@@ -21,7 +26,10 @@ const local = (name, cssVariable, fallbacks, variants) => ({
 
 export default defineConfig({
 	site: 'https://nico.kodeko.org',
-	adapter: cloudflare({ imageService: 'compile', prerenderEnvironment: 'node' }),
+	adapter: localRuntime ? undefined : cloudflare({ imageService: 'compile', prerenderEnvironment: 'node' }),
+	vite: localRuntime
+		? { resolve: { alias: { 'cloudflare:workers': new URL('./src/dev/workers-local.ts', import.meta.url).pathname } } }
+		: {},
 	session: false,
 	integrations: [sitemap({ filter: (page) => !/\/(admin|fun)\/?$/.test(page) })],
 	image: { responsiveStyles: false },

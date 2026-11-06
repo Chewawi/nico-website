@@ -31,22 +31,18 @@ The build only reads this folder.
 | Command | What it does |
 | --- | --- |
 | `bun install` | Install dependencies |
-| `bun run dev` | Dev server with a local D1 database (see note below) |
+| `bun run dev` | Dev server with a local database (see the musl note below) |
 | `bun run build` | Build to `dist/` |
-| `bun run db:migrate:local` | Create the guestbook tables locally |
+| `bun run db:migrate:local` | Create the guestbook tables in workerd's local D1 (glibc only) |
 | `bun run deploy` | Build and deploy to Cloudflare |
 
 Local secrets go in `.dev.vars` (copy `.dev.vars.example`). They hold Cloudflare's Turnstile test keys and the admin password.
 
-**Chimera / musl Linux:** Cloudflare's local runtime (`workerd`) needs glibc. On this machine, run dev inside a container:
-
-```sh
-podman run --rm -it -v "$PWD":/app:Z -v nicoportfolio_nm:/app/node_modules -w /app -p 4330:4321 \
-  mcr.microsoft.com/playwright:v1.65.0-noble \
-  bash -c "npm install --no-package-lock && npx wrangler d1 migrations apply DB --local && npx astro dev --host"
-```
-
-Then open http://127.0.0.1:4330. `bun run build` works on the host.
+**musl Linux (e.g. Chimera):** Cloudflare's local runtime (`workerd`) needs glibc. On musl, `astro dev` detects this,
+runs without the Cloudflare adapter and swaps `cloudflare:workers` for `src/dev/workers-local.ts`, a stand-in that keeps
+D1 in a SQLite file (`.wrangler/local/d1.sqlite`) and applies `migrations/` itself. Turnstile still uses the test keys,
+so the guestbook needs internet access in dev. Builds and deploys always use the real Cloudflare adapter;
+`astro preview` needs workerd and won't run on musl.
 
 ## First deploy
 

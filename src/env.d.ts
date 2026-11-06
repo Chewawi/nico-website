@@ -24,7 +24,3 @@ declare module 'cloudflare:workers' {
 		ADMIN_PASSWORD?: string;
 	};
 }
-
-interface SubtleCrypto {
-	timingSafeEqual(a: ArrayBufferView, b: ArrayBufferView): boolean;
-}
