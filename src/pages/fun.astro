@@ -4,15 +4,24 @@ import exitSign from '../assets/stickers/exit-sign.png';
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Fun" description="You found the fun room." noindex bare>
+<Base title="Fun" description="the fun room" noindex bare ground="none">
 	<div class="room" data-room>
 		<h1 class="sr-only">The fun room</h1>
 		<div class="tree-wrap">
-			<picture>
-				<source media="(prefers-reduced-motion: reduce)" srcset="/decor/deltarune-tree-still.png" />
-				<img class="tree pixelated" src="/decor/deltarune-tree.gif" width="637" height="358" alt="A pixel-art tree with red and magenta leaves" />
-			</picture>
-			<p class="check pixel">* (It's a tree. It sways in a wind you can't feel.)</p>
+			<div class="tree-box">
+				<picture>
+					<source media="(prefers-reduced-motion: reduce)" srcset="/decor/deltarune-tree-still.png" />
+					<img class="tree pixelated" src="/decor/deltarune-tree.gif" width="637" height="358" alt="A pixel-art tree with red and magenta leaves" />
+				</picture>
+				<button class="behind" type="button" data-behind aria-label="Look behind the tree"></button>
+			</div>
+			<div class="check pixel" aria-live="polite">
+				<p data-check>* (He is behind the tree.)</p>
+				<div class="choice" data-choice hidden>
+					<button type="button" data-yes>Yes</button>
+					<button type="button" data-no>No</button>
+				</div>
+			</div>
 		</div>
 
 		<a class="cutout exit" href="/" aria-label="Exit. Way out, back to the art">
@@ -27,6 +36,23 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <script>
+	// The man behind the tree, like in DELTARUNE chapter 1. He has an egg.
+	const check = document.querySelector<HTMLElement>('[data-check]')!;
+	const choice = document.querySelector<HTMLElement>('[data-choice]')!;
+	let gone = false;
+	document.querySelector('[data-behind]')!.addEventListener('click', () => {
+		if (gone) return void (check.textContent = '* (Well, there is not a man here.)');
+		check.textContent = '* (Well, there is a man here.)\n* (He offered you something.)';
+		choice.hidden = false;
+		choice.querySelector('button')!.focus();
+	});
+	choice.querySelector('[data-yes]')!.addEventListener('click', () => location.assign('/egg/'));
+	choice.querySelector('[data-no]')!.addEventListener('click', () => {
+		gone = true;
+		choice.hidden = true;
+		check.textContent = '* (Well, there is not a man here.)';
+	});
+
 	const room = document.querySelector<HTMLElement>('[data-room]')!;
 	room.addEventListener('pointermove', (e) => {
 		room.style.setProperty('--x', `${e.clientX}px`);
@@ -82,17 +108,72 @@ import Base from '../layouts/Base.astro';
 		gap: 12px;
 	}
 
-	.tree {
+	.tree-box {
+		position: relative;
 		width: min(900px, 100%);
+	}
+
+	.tree {
+		width: 100%;
 		height: auto;
 	}
 
 	.check {
-		margin: 0;
+		position: relative;
+		z-index: 2;
+		min-width: min(100%, 420px);
 		padding: 10px 16px;
 		border: 3px solid #f4ecd8;
 		background: #000;
 		font-size: 0.9rem;
+		white-space: pre-line;
+	}
+
+	.check p {
+		margin: 0;
+	}
+
+	.choice {
+		display: flex;
+		gap: 28px;
+		margin-top: 8px;
+		padding-left: 1.2em;
+	}
+
+	.choice[hidden] {
+		display: none;
+	}
+
+	.choice button {
+		padding: 2px 6px;
+		border: 0;
+		background: none;
+		color: #f4ecd8;
+		font: inherit;
+	}
+
+	.choice button:hover,
+	.choice button:focus-visible {
+		color: #ffd27a;
+	}
+
+	.choice button:hover::before,
+	.choice button:focus-visible::before {
+		content: '♥ ';
+		color: #ff4d62;
+	}
+
+	/* an invisible spot just right of the trunk */
+	.behind {
+		position: absolute;
+		z-index: 2;
+		left: 55%;
+		top: 52%;
+		width: max(9%, 44px);
+		height: max(24%, 44px);
+		padding: 0;
+		border: 0;
+		background: none;
 	}
 
 	.exit {

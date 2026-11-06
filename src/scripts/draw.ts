@@ -1,4 +1,4 @@
-import { blip, say } from './eggs';
+import { blip } from './eggs';
 
 declare global {
 	interface Window {
@@ -160,11 +160,11 @@ if (form) {
 		status.className = 'form-status';
 		try {
 			loadTurnstile();
-			status.textContent = 'Checking you’re a human…';
+			status.textContent = 'checking you’re not a robot…';
 			if (!(await tokenReady())) {
-				throw new Error('The human check didn’t load. If something blocks challenges.cloudflare.com, allow it and try again.');
+				throw new Error('the robot check didn’t load. if something blocks challenges.cloudflare.com, allow it and try again');
 			}
-			status.textContent = 'Sending…';
+			status.textContent = 'sending…';
 			const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
 			const data = new FormData(form);
 			data.delete('colour');
@@ -173,14 +173,13 @@ if (form) {
 			data.append('drawing', blob!, 'drawing.png');
 			const res = await fetch('/api/guestbook', { method: 'POST', body: data });
 			const body = (await res.json().catch(() => ({}))) as { error?: string };
-			if (!res.ok) throw new Error(body.error ?? 'Something went wrong. Try again?');
+			if (!res.ok) throw new Error(body.error ?? 'something went wrong. try again?');
 			blank();
 			history.length = 0;
 			drawn = false;
 			form.reset();
-			status.textContent = 'Sent! It will show up on the wall after Nico has a look.';
+			status.textContent = 'sent. it shows up on the wall once i’ve seen it';
 			blip([659, 784, 988, 1319], 0.09);
-			say('* Gotcha! Your drawing was sent!\n* It will show up on the wall soon.');
 		} catch (err) {
 			status.className = 'form-status error';
 			status.textContent = (err as Error).message;

@@ -5,17 +5,6 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 
 <footer class="site-footer">
 	<div class="wrap">
-		<button class="ladybug" type="button" data-egg="bug" aria-label="A ladybug. Poke it">
-			<svg viewBox="0 0 24 20" width="24" height="20" aria-hidden="true">
-				<path d="M6 6 2 2M18 6l4-4M5 12H1M19 12h4M6 17l-3 3M18 17l3 3" stroke="#13060c" stroke-width="1.6" stroke-linecap="round"></path>
-				<ellipse cx="12" cy="12" rx="8" ry="7.5" fill="#df001d" stroke="#13060c" stroke-width="1.6"></ellipse>
-				<path d="M12 4.5v15" stroke="#13060c" stroke-width="1.4"></path>
-				<circle cx="12" cy="5" r="3.4" fill="#13060c"></circle>
-				<circle cx="8.3" cy="11" r="1.5" fill="#13060c"></circle><circle cx="15.7" cy="11" r="1.5" fill="#13060c"></circle>
-				<circle cx="9" cy="15.5" r="1.2" fill="#13060c"></circle><circle cx="15" cy="15.5" r="1.2" fill="#13060c"></circle>
-			</svg>
-		</button>
-
 		<ul class="badges" aria-label="Web buttons">
 			<li><a class="badge b-home" href="/">mrnico12<br />★ home ★</a></li>
 			<li>
@@ -23,22 +12,18 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 			</li>
 			<li><span class="badge b-uy">hecho en<br />uruguay ☀</span></li>
 			<li><a class="badge b-gb" href="/guestbook/"><span class="blink">sign my</span>guestbook!</a></li>
-			<li><span class="badge b-bugs">bugs<br />welcome</span></li>
-			<li><span class="badge b-clean">no ads<br />no trackers</span></li>
 		</ul>
 
 		<div class="meta">
 			<p class="counter pixel" data-counter hidden>
-				you are visitor no. <span class="digits" data-digits>000000</span>
+				you are visitor no.
+				<button class="digits" type="button" data-egg="counter" data-digits aria-label="Visitor number">000000</button>
 			</p>
-			<button class="save" type="button" data-egg="save" aria-label="A glowing star. Save your progress">
-				<svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true">
-					<path
-						d="M10 1l2.4 6.1L19 7.6l-5.1 4.2 1.7 6.5L10 14.6l-5.6 3.7 1.7-6.5L1 7.6l6.6-.5z"
-						fill="#ffe14d"
-						stroke="#13060c"
-						stroke-width="1.4"
-						stroke-linejoin="round"></path>
+			<button class="trinket" type="button" data-egg="trinket" aria-label="An egg" data-trinket hidden>
+				<svg viewBox="0 0 12 14" width="18" height="21" shape-rendering="crispEdges" aria-hidden="true">
+					<path fill="#13060c" d="M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v2H1zM10 2h1v2h-1zM0 4h1v6H0zM11 4h1v6h-1zM1 10h1v2H1zM10 10h1v2h-1zM2 12h2v1H2zM8 12h2v1H8zM4 13h4v1H4z"></path>
+					<path fill="#fff6dc" d="M4 1h4v1h2v2h1v6h-1v2H8v1H4v-1H2v-2H1V4h1V2h2z"></path>
+					<path fill="#e9d6a8" d="M8 9h2v1H8zM6 11h3v1H6z"></path>
 				</svg>
 			</button>
 		</div>
@@ -46,7 +31,7 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 		<p class="fine">
 			© {built.getFullYear()} Nicolas (mrnico12) · last updated {updated}
 			<br />
-			<span class="credits">penguin sprite from OneShot · sunflower, signs and pin found on the internet</span>
+			<span class="credits">the yellow dog, sunflower, signs, pins and the other stickers are found on the internet</span>
 		</p>
 	</div>
 </footer>
@@ -56,11 +41,14 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 		margin-top: clamp(48px, 8vw, 96px);
 		padding-block: 28px 40px;
 		border-top: var(--line);
-		background: rgb(19 6 12 / 0.04);
+		background: rgb(255 254 248 / 0.35);
+	}
+
+	:root.dark-world .site-footer {
+		background: rgb(0 0 0 / 0.3);
 	}
 
 	.wrap {
-		position: relative;
 		display: grid;
 		gap: 18px;
 	}
@@ -96,16 +84,6 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 		gap: 0;
 	}
 
-	.b-bugs {
-		background: #237a34;
-		color: #fff;
-	}
-
-	.b-clean {
-		background: var(--paper);
-		color: var(--ink);
-	}
-
 	.meta {
 		display: flex;
 		align-items: center;
@@ -121,23 +99,21 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 		display: inline-block;
 		margin-left: 0.3em;
 		padding: 2px 4px;
+		border: 0;
 		background: #000;
 		color: #7dff7d;
+		font: inherit;
 		letter-spacing: 0.25em;
 	}
 
-	.save {
-		padding: 4px;
+	.trinket {
+		padding: 2px;
 		border: 0;
 		background: none;
-		animation: twinkle 2.4s ease-in-out 6;
 	}
 
-	@keyframes twinkle {
-		50% {
-			scale: 1.15;
-			filter: drop-shadow(0 0 6px #fff6a8);
-		}
+	.trinket[hidden] {
+		display: none;
 	}
 
 	.fine {
@@ -148,41 +124,5 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 
 	.credits {
 		opacity: 0.8;
-	}
-
-	.ladybug {
-		position: absolute;
-		top: -40px;
-		left: 12%;
-		padding: 4px;
-		border: 0;
-		background: none;
-		rotate: 90deg;
-		animation: crawl 38s linear 4 alternate;
-	}
-
-	@keyframes crawl {
-		to {
-			left: 82%;
-		}
-	}
-
-	.ladybug.flown {
-		animation: fly 1.2s ease-in forwards;
-		pointer-events: none;
-	}
-
-	@keyframes fly {
-		to {
-			translate: 140px -220px;
-			rotate: 30deg;
-			opacity: 0;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.ladybug.flown {
-			visibility: hidden;
-		}
 	}
 </style>

@@ -31,7 +31,7 @@ export default defineConfig({
 		? { resolve: { alias: { 'cloudflare:workers': new URL('./src/dev/workers-local.ts', import.meta.url).pathname } } }
 		: {},
 	session: false,
-	integrations: [sitemap({ filter: (page) => !/\/(admin|fun)\/?$/.test(page) })],
+	integrations: [sitemap({ filter: (page) => !/\/(admin|fun|egg)\/?$/.test(page) })],
 	image: { responsiveStyles: false },
 	fonts: [
 		local('Atkinson Hyperlegible', '--font-text', ['system-ui', 'sans-serif'], [

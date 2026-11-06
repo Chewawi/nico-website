@@ -1,0 +1,199 @@
+---
+import { MAIL, SOCIALS } from '../consts';
+import Icon from './Icon.astro';
+
+interface Props {
+	variant?: 'icons' | 'cards';
+	class?: string;
+}
+
+const { variant = 'icons', class: className } = Astro.props;
+const cards = variant === 'cards';
+const mail = `${MAIL.user}|${MAIL.domain}`;
+const tilts = [-2.5, 2, -1, 1.5];
+---
+
+<ul class:list={['socials', variant, className]}>
+	{
+		SOCIALS.map((s, i) => (
+			<li class={`s-${s.id}`} style={cards ? `--tilt:${tilts[i]}deg` : undefined}>
+				{s.id === 'discord' ? (
+					<button class="social" type="button" data-copy={s.handle} aria-label={cards ? undefined : `Discord, ${s.handle}. Copies the username`}>
+						<Icon name={s.id} size={cards ? 40 : 30} />
+						{cards && (
+							<>
+								<span class="name chunky">{s.name}</span>
+								<span class="handle">
+									{s.handle} <span class="hint">(copies it)</span>
+								</span>
+							</>
+						)}
+					</button>
+				) : s.id === 'email' ? (
+					<a class="social" href="/contact/#email" data-mail={mail} aria-label={cards ? undefined : 'Email'}>
+						<Icon name={s.id} size={cards ? 40 : 30} />
+						{cards && (
+							<>
+								<span class="name chunky">{s.name}</span>
+								<span class="handle" data-mail-text>
+									{s.handle}
+								</span>
+							</>
+						)}
+					</a>
+				) : (
+					<a class="social" href={s.href} target="_blank" rel="noopener me" aria-label={cards ? undefined : `${s.name}, ${s.handle}`}>
+						<Icon name={s.id} size={cards ? 40 : 30} />
+						{cards && (
+							<>
+								<span class="name chunky">{s.name}</span>
+								<span class="handle">{s.handle}</span>
+							</>
+						)}
+					</a>
+				)}
+			</li>
+		))
+	}
+</ul>
+
+<style>
+	.socials {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.social {
+		border: 0;
+		background: none;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	/* ---------- icon row ---------- */
+
+	.icons {
+		display: flex;
+		gap: 4px;
+	}
+
+	.icons .social {
+		display: grid;
+		place-items: center;
+		width: var(--hit, 46px);
+		height: var(--hit, 46px);
+		padding: 0;
+		border-radius: 50%;
+		color: var(--ink);
+		transition:
+			rotate 0.2s var(--ease),
+			scale 0.2s var(--ease),
+			color 0.15s;
+	}
+
+	.icons .social:hover,
+	.icons .social:focus-visible {
+		rotate: -8deg;
+		scale: 1.12;
+	}
+
+	.icons .s-instagram .social:hover {
+		color: #c2185b;
+	}
+
+	.icons .s-bluesky .social:hover {
+		color: #0a66d6;
+	}
+
+	.icons .s-email .social:hover {
+		color: var(--red);
+	}
+
+	.icons .s-discord .social:hover {
+		color: #4752c4;
+	}
+
+	/* ---------- big cards (contact page) ---------- */
+
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+		gap: clamp(24px, 4vw, 44px) clamp(20px, 3vw, 36px);
+	}
+
+	.cards .social {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: center;
+		gap: 2px 14px;
+		width: 100%;
+		height: 100%;
+		padding: clamp(20px, 3vw, 30px) clamp(18px, 3vw, 26px);
+		border: 3px solid var(--ink);
+		border-radius: 14px;
+		background: var(--bg);
+		color: var(--fg, #fff);
+		text-align: left;
+		box-shadow: 6px 6px 0 var(--ink);
+		rotate: var(--tilt);
+		transition:
+			rotate 0.25s var(--ease),
+			translate 0.15s,
+			box-shadow 0.15s;
+	}
+
+	.cards .social:hover,
+	.cards .social:focus-visible {
+		rotate: 0deg;
+		translate: -2px -3px;
+		box-shadow: 8px 9px 0 var(--ink);
+	}
+
+	.cards .social:active {
+		translate: 3px 3px;
+		box-shadow: 2px 2px 0 var(--ink);
+	}
+
+	.cards :global(.icon) {
+		grid-row: span 2;
+	}
+
+	.cards .name {
+		font-size: clamp(1.5rem, 3vw, 2rem);
+		text-shadow: 0.06em 0.06em 0 rgb(19 6 12 / 0.3);
+	}
+
+	.cards .handle {
+		font-weight: 700;
+		overflow-wrap: break-word;
+		min-width: 0;
+	}
+
+	.hint {
+		font-weight: 400;
+		opacity: 0.85;
+	}
+
+	.cards .s-instagram {
+		--bg: linear-gradient(to top left, #feda75, #fa7e1e 16%, #d62976 42%, #962fbf 72%, #4f5bd5);
+	}
+
+	.cards .s-bluesky {
+		--bg: #0a66d6;
+	}
+
+	.cards .s-email {
+		--bg: var(--paper);
+		--fg: var(--ink);
+	}
+
+	.cards .s-email .name {
+		color: var(--red);
+		text-shadow: none;
+	}
+
+	.cards .s-discord {
+		--bg: #4752c4;
+	}
+</style>

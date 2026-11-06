@@ -4,14 +4,11 @@ import damn from '../assets/stickers/damn-im-good.png';
 import pushpin from '../assets/stickers/pushpin.png';
 import { LINKS } from '../consts';
 import Base from '../layouts/Base.astro';
-
-const likes = ['art', 'videogames', 'collecting trinkets and treasures', 'bugs'];
-const tilts = [-3, 2, -1.5, 3.5];
 ---
 
-<Base title="About" description="About Nicolas (mrnico12), a self-taught uruguayan 'artist'.">
+<Base title="About" description="About Nicolas (mrnico12), a self-taught uruguayan 'artist'." ground="wires">
 	<div class="about wrap">
-		<h1 class="scrawl">About me</h1>
+		<h1 class="scrawl">about me</h1>
 
 		<div class="layout">
 			<article class="note paper">
@@ -24,19 +21,8 @@ const tilts = [-3, 2, -1.5, 3.5];
 				<p>I like art, videogames, collecting trinkets and treasures, bugs</p>
 				<p class="love script">I love you</p>
 			</article>
-
-			<aside class="side" aria-labelledby="likes">
-				<h2 id="likes" class="chunky printed">Things I like</h2>
-				<ul class="likes">
-					{likes.map((like, i) => <li class="like paper" style={`rotate:${tilts[i]}deg`}>{like}</li>)}
-				</ul>
-				<Image class="damn cutout" src={damn} alt="A round pin badge that says: Damn, I'm good" width={170} />
-			</aside>
+			<Image class="damn cutout" src={damn} alt="A round pin badge that says: Damn, I'm good" width={200} />
 		</div>
-
-		<p class="command">
-			<a href="/">&gt; Nicolas: Show them the art. <span aria-hidden="true">==&gt;</span></a>
-		</p>
 	</div>
 </Base>
 
@@ -52,10 +38,8 @@ const tilts = [-3, 2, -1.5, 3.5];
 	}
 
 	.layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-		gap: clamp(40px, 6vw, 80px);
-		align-items: start;
+		position: relative;
+		max-width: 760px;
 	}
 
 	/* lined notebook paper */
@@ -104,44 +88,21 @@ const tilts = [-3, 2, -1.5, 3.5];
 		}
 	}
 
-	.side h2 {
-		font-size: 1.3rem;
-		margin-bottom: 18px;
-	}
-
-	.likes {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 14px 12px;
-		margin: 0 0 36px;
-		padding: 0;
-		list-style: none;
-	}
-
-	.like {
-		padding: 8px 14px;
-		font-weight: 700;
-		border: var(--line);
-		border-color: var(--ink);
-	}
-
 	.damn {
-		--r: 8deg;
-		width: clamp(120px, 14vw, 170px);
+		--r: 12deg;
+		position: absolute;
+		right: 0;
+		bottom: -70px;
+		width: clamp(120px, 16vw, 200px);
 		height: auto;
-		margin-left: 20%;
-	}
-
-	.command {
-		margin: clamp(48px, 7vw, 80px) 0 0;
-		font-family: 'Courier New', monospace;
-		font-weight: 700;
-		font-size: clamp(1rem, 2vw, 1.2rem);
 	}
 
 	@media (max-width: 760px) {
-		.layout {
-			grid-template-columns: 1fr;
+		.damn {
+			position: relative;
+			right: auto;
+			bottom: auto;
+			margin: 28px 0 0 auto;
 		}
 	}
 </style>

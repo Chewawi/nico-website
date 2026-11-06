@@ -60,7 +60,11 @@ Go to `/admin/`. The browser asks for a password: any username works, and the pa
 New drawings wait there until approved. "Take down" hides an approved drawing again, and "Delete" removes it for good.
 Submissions stop being accepted while 200 drawings are waiting.
 
-## The penguin
+## Decorations
 
-The penguin plays `public/sounds/hello.ogg` (or `hello.mp3`) when clicked. Drop the "hello" clip from the old straw.page
-there; until then it only says hello in a text box.
+- `src/assets/decor/doodles.webp` is the wallpaper tile, made from small bits of his drawings (signatures, the kitty,
+  sparkles, the jester hat). `hoodie-dog.png` is the hoodie dog cut out of one drawing. Swap either for a better version anytime.
+- Each page picks its wallpaper with `<Base ground="...">`: `doodles`, `wires`, `sky`, `sparkle` or `none` (see `global.css`).
+- Found stickers live in `src/assets/stickers/`. They're credited in the footer.
+- The penguin on `/fun/` plays `public/sounds/hello.ogg`.
+- `public/decor/dark-fountain.gif` (and its still frame) is DELTARUNE's Dark Fountain, from the DEVICE menu, shrunk to 320×240.

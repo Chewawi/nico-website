@@ -1,60 +1,113 @@
 ---
 import { Image } from 'astro:assets';
 import pole from '../assets/pole.jpg';
+import arrows from '../assets/stickers/arrows.png';
+import bubble from '../assets/stickers/bubble.png';
+import cat from '../assets/stickers/cat.png';
 import funSign from '../assets/stickers/fun-sign.png';
+import mushroom from '../assets/stickers/mushroom.png';
+import notebook from '../assets/stickers/notebook.png';
+import pushpin from '../assets/stickers/pushpin.png';
+import starCard from '../assets/stickers/star-card.png';
 import sunflower from '../assets/stickers/sunflower.png';
+import yellowDog from '../assets/stickers/yellow-dog.png';
 import Gallery from '../components/Gallery.astro';
+import Socials from '../components/Socials.astro';
 import { LINKS } from '../consts';
 import Base from '../layouts/Base.astro';
 ---
 
 <Base>
-	<section class="hero wrap" aria-labelledby="hello">
-		<div class="hello-text">
-			<h1 id="hello">
+	<div class="band">
+		<section class="hero wrap" aria-labelledby="hello">
+			<Image class="dog" src={yellowDog} alt="" width={200} loading="eager" />
+
+			<h1 id="hello" class="title">
 				<span class="scrawl hello-word">Hello</span>
 				<span class="script friend">friend</span>
 			</h1>
-			<p class="intro">
-				My name is Nicolas. I'm a self-taught,{' '}
-				<a href={LINKS.uruguay} target="_blank" rel="noopener">uruguayan</a> 'artist'.
-			</p>
-			<div class="ctas">
-				<a class="sticker big" style="--tilt:-2deg" href="#gallery">Wanna check my art?</a>
-				<a class="sticker big" style="--tilt:1.5deg" href="/contact/">Check my socials</a>
-			</div>
-		</div>
 
-		<div class="collage">
-			<div class="print paper tape">
-				<Image src={pole} alt="A utility pole tangled in wires, posterised mustard yellow" widths={[300, 600]} sizes="(min-width: 860px) 320px, 46vw" loading="eager" class="pixelated" />
+			<div class="bio">
+				<Image class="bio-paper" src={notebook} alt="" width={460} loading="eager" />
+				<p>
+					My name is Nicolas. I'm a self-taught,{' '}
+					<a href={LINKS.uruguay} target="_blank" rel="noopener">uruguayan</a> 'artist'.
+				</p>
+				<a class="cutout cat" href={LINKS.uruguay} target="_blank" rel="noopener" aria-label="A yawning orange cat. Opens a clip on YouTube">
+					<Image src={cat} alt="" width={120} />
+				</a>
 			</div>
-			<a class="cutout flower" href={LINKS.sunflower} target="_blank" rel="noopener" data-egg="flower" aria-label="A sunflower. Opens A Home For Flowers from the OMORI soundtrack on YouTube">
-				<Image src={sunflower} alt="" width={180} />
+
+			<div class="photo">
+				<div class="print paper tape">
+					<Image src={pole} alt="A utility pole tangled in wires, posterised mustard yellow" widths={[300, 600]} sizes="(min-width: 900px) 330px, 44vw" loading="eager" class="pixelated" />
+				</div>
+				<Image class="flower flower-back" src={sunflower} alt="" width={180} />
+				<a class="cutout flower" href={LINKS.sunflower} target="_blank" rel="noopener" data-egg="flower" aria-label="A sunflower. Opens A Home For Flowers from the OMORI soundtrack on YouTube">
+					<Image src={sunflower} alt="" width={180} />
+				</a>
+				<a class="cutout fun-sign" href="/fun/" aria-label="A light-up FUN sign. Go to the fun room">
+					<Image src={funSign} alt="" width={110} />
+				</a>
+			</div>
+
+			<a class="art-cta" href="#gallery">
+				<Image class="bubble-img" src={bubble} alt="" width={340} />
+				<span class="bubble-text chunky">wanna check my art?</span>
+				<Image class="arrows" src={arrows} alt="" width={120} />
 			</a>
-			<a class="cutout fun-sign" href="/fun/" aria-label="A light-up FUN sign. Go to the fun room">
-				<Image src={funSign} alt="" width={110} />
-			</a>
-		</div>
-	</section>
+
+			<div class="socials-card">
+				<Image class="card-img" src={starCard} alt="" width={340} />
+				<Image class="pin" src={pushpin} alt="" width={48} />
+				<h2 class="card-title chunky">check my socials</h2>
+				<Socials />
+			</div>
+
+			<Image class="mushroom" src={mushroom} alt="" width={170} />
+		</section>
+	</div>
 
 	<Gallery />
 </Base>
 
 <style>
-	.hero {
-		display: grid;
-		grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-		align-items: center;
-		gap: 24px 40px;
-		padding-block: clamp(12px, 3vw, 40px) clamp(48px, 7vw, 88px);
+	/* lets stickers hang off the screen edge without a sideways scrollbar */
+	.band {
+		overflow-x: clip;
 	}
 
-	h1 {
+	.hero {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 0.62fr) minmax(0, 0.48fr) minmax(0, 0.9fr);
+		grid-template-areas:
+			'title title photo'
+			'bio cta photo'
+			'bio cta socials';
+		align-items: start;
+		gap: 0 clamp(24px, 4vw, 56px);
+		padding-block: clamp(4px, 2vw, 24px) clamp(56px, 8vw, 104px);
+	}
+
+	.dog {
+		position: absolute;
+		top: 8px;
+		left: calc(-1 * clamp(70px, 8vw, 130px));
+		width: clamp(110px, 12vw, 170px);
+		height: auto;
+		rotate: -8deg;
+		filter: drop-shadow(0 3px 3px rgb(19 6 12 / 0.25));
+		pointer-events: none;
+	}
+
+	.title {
+		grid-area: title;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
 		gap: 0 0.3em;
+		margin-left: clamp(40px, 7vw, 120px);
 	}
 
 	.hello-word {
@@ -64,29 +117,49 @@ import Base from '../layouts/Base.astro';
 	}
 
 	.friend {
-		font-size: clamp(2.6rem, 6vw, 4.4rem);
+		font-size: clamp(2.4rem, 5.5vw, 4.2rem);
 		rotate: -6deg;
-		translate: 0 0.1em;
+		translate: -0.4em 0.15em;
 	}
 
-	.intro {
-		max-width: 30ch;
-		margin: clamp(16px, 2.6vw, 28px) 0 clamp(22px, 3vw, 32px);
-		font-size: clamp(1.15rem, 2vw, 1.4rem);
-		line-height: 1.45;
+	/* the bio sits on a scrap of taped notebook paper, a bit crooked */
+	.bio {
+		grid-area: bio;
+		position: relative;
+		width: min(100%, 380px);
+		margin: -10px 0 0 clamp(0px, 2vw, 30px);
+		rotate: 2.5deg;
 	}
 
-	.ctas {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 14px 18px;
+	.bio-paper {
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 4px 6px rgb(19 6 12 / 0.25));
 	}
 
-	.collage {
+	.bio p {
+		position: absolute;
+		inset: 26% 14% auto 25%;
+		margin: 0;
+		color: var(--ink);
+		font-size: clamp(1.1rem, 1.9vw, 1.35rem);
+		line-height: 1.75;
+	}
+
+	.cat {
+		--r: 12deg;
+		position: absolute;
+		right: -6%;
+		bottom: 6%;
+		width: clamp(64px, 7vw, 96px);
+	}
+
+	.photo {
+		grid-area: photo;
 		position: relative;
 		justify-self: center;
-		width: min(100%, 360px);
-		padding: 10px 40px 40px 0;
+		width: min(100%, 340px);
+		margin-top: clamp(10px, 3vw, 40px);
 	}
 
 	.print {
@@ -99,71 +172,180 @@ import Base from '../layouts/Base.astro';
 		height: auto;
 		aspect-ratio: 2 / 3;
 		object-fit: cover;
-		max-height: 440px;
+		max-height: 450px;
 	}
 
 	.flower {
 		--r: -12deg;
 		position: absolute;
-		left: -70px;
-		bottom: -6px;
-		width: clamp(110px, 14vw, 170px);
+		left: -64px;
+		bottom: 40px;
+		width: clamp(100px, 12vw, 160px);
+	}
+
+	.flower-back {
+		left: -96px;
+		bottom: -10px;
+		rotate: 58deg;
+		scale: 0.8;
+		filter: drop-shadow(0 3px 4px rgb(19 6 12 / 0.3)) saturate(0.8);
+		pointer-events: none;
 	}
 
 	.fun-sign {
 		--r: 8deg;
 		position: absolute;
-		right: -6px;
-		top: 34%;
+		right: -30px;
+		top: 30%;
 		width: clamp(70px, 8vw, 104px);
 	}
 
-	.cutout :global(img) {
+	.cutout :global(img),
+	.bubble-img {
 		width: 100%;
 		height: auto;
 	}
 
-	/* phones: title on top, the collage tucks in beside the intro so the drawings show up sooner */
-	@media (max-width: 760px) {
+	/* "wanna check my art?" in a speech bubble, with paper arrows pointing at the drawings */
+	.art-cta {
+		grid-area: cta;
+		position: relative;
+		justify-self: start;
+		align-self: center;
+		width: clamp(240px, 24vw, 320px);
+		margin: 0 0 0 clamp(-60px, -3vw, -20px);
+		color: var(--ink);
+		text-decoration: none;
+		rotate: -4deg;
+		filter: drop-shadow(0 4px 5px rgb(19 6 12 / 0.25));
+		transition:
+			rotate 0.25s var(--ease),
+			scale 0.25s var(--ease);
+	}
+
+	.art-cta:hover,
+	.art-cta:focus-visible {
+		rotate: 0deg;
+		scale: 1.04;
+	}
+
+	.bubble-text {
+		position: absolute;
+		inset: 18% 10% 34% 16%;
+		display: grid;
+		place-items: center;
+		font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+		text-align: center;
+		rotate: -8deg;
+		/* the straw page stacked two copies of this line, slightly off */
+		text-shadow:
+			0.07em 0.07em 0 rgb(19 6 12 / 0.28),
+			-0.03em 0.1em 0 rgb(223 0 29 / 0.25);
+	}
+
+	.arrows {
+		position: absolute;
+		left: 34%;
+		top: 88%;
+		width: clamp(56px, 5vw, 80px);
+		height: auto;
+		rotate: 100deg;
+		filter: drop-shadow(0 2px 3px rgb(19 6 12 / 0.25));
+		pointer-events: none;
+	}
+
+	/* socials pinned to the lined card with the denim stars */
+	.socials-card {
+		grid-area: socials;
+		position: relative;
+		justify-self: center;
+		width: clamp(260px, 24vw, 310px);
+		aspect-ratio: 375 / 300;
+		margin-top: -36px;
+		rotate: -3deg;
+	}
+
+	.card-img {
+		position: absolute;
+		inset: auto 0 0;
+		width: 100%;
+		height: auto;
+		/* the sticker has a lot of empty space above and below the paper */
+		top: -65%;
+		filter: drop-shadow(0 4px 5px rgb(19 6 12 / 0.25));
+		pointer-events: none;
+	}
+
+	.pin {
+		position: absolute;
+		top: -6%;
+		left: 44%;
+		width: 34px;
+		height: auto;
+		rotate: 14deg;
+		filter: drop-shadow(2px 3px 2px rgb(19 6 12 / 0.35));
+		z-index: 2;
+	}
+
+	.card-title {
+		position: relative;
+		margin: 17% 0 0 24%;
+		font-size: clamp(0.85rem, 1.3vw, 1rem);
+		color: var(--ink);
+		rotate: 2deg;
+	}
+
+	.socials-card :global(.socials) {
+		position: relative;
+		margin: 2% 0 0 21%;
+	}
+
+	.mushroom {
+		position: absolute;
+		left: calc(-1 * clamp(60px, 9vw, 150px));
+		bottom: clamp(-30px, -2vw, 0px);
+		width: clamp(90px, 11vw, 170px);
+		height: auto;
+		rotate: 26deg;
+		filter: drop-shadow(0 3px 4px rgb(19 6 12 / 0.3));
+		pointer-events: none;
+		z-index: -1;
+	}
+
+	/* ---------- phones and narrow tablets ---------- */
+	@media (max-width: 860px) {
 		.hero {
-			grid-template-columns: minmax(0, 1fr) 38%;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
 			grid-template-areas:
 				'title title'
-				'intro collage'
-				'ctas collage';
-			align-items: start;
-			gap: 0 14px;
+				'bio bio'
+				'cta photo'
+				'socials photo';
+			gap: 0 12px;
 		}
 
-		.hello-text {
-			display: contents;
+		.dog {
+			left: auto;
+			right: -36px;
+			top: -4px;
+			width: 92px;
+			rotate: 10deg;
+			scale: -1 1;
 		}
 
-		h1 {
-			grid-area: title;
+		.title {
+			margin-left: 0;
 		}
 
-		.intro {
-			grid-area: intro;
-			margin-top: 12px;
-			font-size: 1.05rem;
+		.bio {
+			justify-self: center;
+			width: min(100%, 320px);
+			margin: -14px 0 -48px;
 		}
 
-		.ctas {
-			grid-area: ctas;
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 12px;
-		}
-
-		.ctas .sticker {
-			font-size: 0.85rem;
-		}
-
-		.collage {
-			grid-area: collage;
+		.photo {
 			width: 100%;
-			padding: 14px 18px 0 0;
+			margin-top: 20px;
 		}
 
 		.print {
@@ -171,18 +353,56 @@ import Base from '../layouts/Base.astro';
 		}
 
 		.print :global(img) {
-			max-height: 230px;
+			max-height: 260px;
 		}
 
 		.flower {
-			left: -28px;
-			bottom: -34px;
+			left: -30px;
+			bottom: -26px;
 			width: 74px;
 		}
 
+		.flower-back {
+			display: none;
+		}
+
 		.fun-sign {
-			right: -4px;
-			width: 48px;
+			right: -12px;
+			width: 50px;
+		}
+
+		.art-cta {
+			justify-self: start;
+			width: 100%;
+			max-width: 260px;
+			margin-top: 16px;
+		}
+
+		.arrows {
+			display: none;
+		}
+
+		.socials-card {
+			justify-self: start;
+			width: calc(100% + 24px);
+			max-width: 270px;
+			margin: 22px 0 0 -12px;
+			z-index: 1;
+		}
+
+		.card-title {
+			margin: 18% 0 0 25%;
+			font-size: 0.78rem;
+		}
+
+		.socials-card :global(.socials) {
+			--hit: 36px;
+			gap: 2px;
+			margin: 1% 0 0 21%;
+		}
+
+		.mushroom {
+			display: none;
 		}
 	}
 </style>

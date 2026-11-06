@@ -1,4 +1,6 @@
 ---
+import { getImage } from 'astro:assets';
+import hoodieDog from '../assets/decor/hoodie-dog.png';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
@@ -9,9 +11,12 @@ interface Props {
 	description?: string;
 	noindex?: boolean;
 	bare?: boolean;
+	/** wallpaper texture, see global.css */
+	ground?: 'doodles' | 'wires' | 'sky' | 'sparkle' | 'none';
 }
 
-const { title, description = SITE_DESCRIPTION, noindex, bare = false } = Astro.props;
+const { title, description = SITE_DESCRIPTION, noindex, bare = false, ground = 'doodles' } = Astro.props;
+const dog = await getImage({ src: hoodieDog, width: 120, densities: [1, 2], format: 'webp' });
 ---
 
 <!doctype html>
@@ -23,7 +28,7 @@ const { title, description = SITE_DESCRIPTION, noindex, bare = false } = Astro.p
 		</script>
 		<slot name="head" />
 	</head>
-	<body>
+	<body data-ground={ground} data-dog={dog.src} data-dog-retina={dog.srcSet.values.at(-1)?.url}>
 		<a class="skip" href="#main">Skip to content</a>
 		{!bare && <Header />}
 		<main id="main">

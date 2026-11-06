@@ -7,12 +7,7 @@ const tilts = ['-2deg', '1.5deg', '-1deg', '2.5deg'];
 ---
 
 <header class="site-header wrap">
-	<div class="brand-row">
-		<a class="brand chunky printed" href="/">mrnico12</a>
-		<button class="penguin cutout" type="button" data-egg="hello" aria-label="Penguin. Says hello">
-			<img class="pixelated" src="/decor/penguin.png" alt="" width="24" height="40" />
-		</button>
-	</div>
+	<a class="brand chunky printed" href="/">mrnico12</a>
 	<nav aria-label="Main">
 		<ul>
 			{
@@ -43,36 +38,11 @@ const tilts = ['-2deg', '1.5deg', '-1deg', '2.5deg'];
 		padding-block: clamp(14px, 2.5vw, 26px);
 	}
 
-	.brand-row {
-		display: flex;
-		align-items: flex-end;
-		gap: 0.6rem;
-	}
-
 	.brand {
 		font-size: clamp(1.6rem, 3.4vw, 2.3rem);
 		text-decoration: none;
 		color: var(--on-ground);
-	}
-
-	.penguin {
-		--r: 4deg;
-		margin-bottom: 0.2rem;
-	}
-
-	.penguin img {
-		width: 24px;
-		height: 40px;
-	}
-
-	.penguin.talking {
-		animation: hop 0.5s steps(2) 2;
-	}
-
-	@keyframes hop {
-		50% {
-			translate: 0 -6px;
-		}
+		rotate: -2deg;
 	}
 
 	ul {

@@ -1,0 +1,66 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Egg" description="an egg" noindex bare ground="none">
+	<div class="egg-room">
+		<svg class="egg" viewBox="0 0 12 14" width="96" height="112" shape-rendering="crispEdges" role="img" aria-label="A pixel egg">
+			<path fill="#f4ecd8" d="M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v2H1zM10 2h1v2h-1zM0 4h1v6H0zM11 4h1v6h-1zM1 10h1v2H1zM10 10h1v2h-1zM2 12h2v1H2zM8 12h2v1H8zM4 13h4v1H4z"></path>
+			<path fill="#fff6dc" d="M4 1h4v1h2v2h1v6h-1v2H8v1H4v-1H2v-2H1V4h1V2h2z"></path>
+			<path fill="#e9d6a8" d="M8 9h2v1H8zM6 11h3v1H6z"></path>
+		</svg>
+		<h1 class="got pixel">* (You got the Egg.)</h1>
+		<a class="back pixel" href="/fun/">go back</a>
+	</div>
+</Base>
+
+<script>
+	localStorage.setItem('egg', '1');
+</script>
+
+<style>
+	:global(body) {
+		background: #000;
+		color: #f4ecd8;
+	}
+
+	.egg-room {
+		min-height: 100dvh;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 28px;
+		padding: 24px;
+	}
+
+	.egg {
+		image-rendering: pixelated;
+		animation: bob 1.6s steps(2) 8;
+	}
+
+	@keyframes bob {
+		50% {
+			translate: 0 -4px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.egg {
+			animation: none;
+		}
+	}
+
+	.got {
+		margin: 0;
+		font-size: 1rem;
+	}
+
+	.back {
+		color: #b9ad94;
+		font-size: 0.85rem;
+	}
+
+	:focus-visible {
+		outline-color: #ffd27a;
+	}
+</style>

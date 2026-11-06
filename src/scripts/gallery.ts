@@ -140,7 +140,7 @@ function apply(cat: string, announce = true) {
 	if (cat === 'all') url.searchParams.delete('c');
 	else url.searchParams.set('c', cat);
 	history.replaceState(null, '', url);
-	if (announce) filterStatus.textContent = `Showing ${visible().length} works`;
+	if (announce) filterStatus.textContent = `${visible().length} drawings`;
 }
 
 if (filters) {

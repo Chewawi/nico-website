@@ -1,5 +1,8 @@
 ---
 import { env } from 'cloudflare:workers';
+import { Image } from 'astro:assets';
+import konamiEntry from '../assets/decor/konami-entry.png';
+import Icon from '../components/Icon.astro';
 import { CANVAS, db, type Entry, formatDate, LIMITS } from '../lib/guestbook';
 import Base from '../layouts/Base.astro';
 
@@ -41,23 +44,17 @@ const sizes = [
 ] as const;
 ---
 
-<Base title="Guestbook" description="Sign mrnico12's guestbook by drawing something.">
+<Base title="Guestbook" description="Sign mrnico12's guestbook by drawing something." ground="sparkle">
 	<div class="gb wrap">
 		<header class="gb-head">
-			<h1>
-				<span class="scrawl">Guestbook</span>
-				<span class="script">sign it!</span>
-			</h1>
-			<p class="lede">
-				Draw me something and leave your name if you want. Drawings show up on the wall once I've seen them.
-				<span class="new pixel blink">new!</span>
-			</p>
+			<h1 class="scrawl">guestbook</h1>
+			<p class="lede">draw me something. it shows up on the wall once i've seen it.</p>
 		</header>
 
 		<form class="sketchbook paper tape" data-sign hidden>
 			<div class="tools">
 				<fieldset class="swatches">
-					<legend>Colour</legend>
+					<legend><Icon name="palette" /><span class="sr-only">Colour</span></legend>
 					{
 						colours.map(([hex, name], i) => (
 							<label class="swatch" style={`--c:${hex}`}>
@@ -73,7 +70,7 @@ const sizes = [
 				</fieldset>
 
 				<fieldset class="sizes">
-					<legend>Brush</legend>
+					<legend><Icon name="brush" /><span class="sr-only">Brush size</span></legend>
 					{
 						sizes.map(([px, name], i) => (
 							<label class="size">
@@ -83,16 +80,17 @@ const sizes = [
 							</label>
 						))
 					}
-					<label class="tool">
+					<label class="tool" title="Eraser">
 						<input type="checkbox" name="eraser" data-eraser />
-						<span>Eraser</span>
+						<Icon name="eraser" />
+						<span class="sr-only">Eraser</span>
 					</label>
 				</fieldset>
 
 				<div class="actions">
-					<button class="tool-btn" type="button" data-undo disabled>Undo</button>
-					<button class="tool-btn" type="button" data-clear disabled>Clear</button>
-					<button class="tool-btn" type="button" data-save disabled>Save it</button>
+					<button class="tool-btn" type="button" data-undo disabled aria-label="Undo" title="Undo"><Icon name="undo" /></button>
+					<button class="tool-btn" type="button" data-clear disabled aria-label="Clear the page" title="Clear"><Icon name="clear" /></button>
+					<button class="tool-btn" type="button" data-save disabled aria-label="Save to your device" title="Save"><Icon name="save" /></button>
 				</div>
 			</div>
 
@@ -104,11 +102,11 @@ const sizes = [
 
 			<div class="fields">
 				<label class="field">
-					<span>Your name <small>(optional)</small></span>
+					<span>name <small>(optional)</small></span>
 					<input name="name" maxlength={LIMITS.name} autocomplete="nickname" />
 				</label>
 				<label class="field">
-					<span>A message <small>(optional)</small></span>
+					<span>message <small>(optional)</small></span>
 					<textarea name="message" maxlength={LIMITS.message} rows="2"></textarea>
 				</label>
 				<label class="hp" aria-hidden="true">
@@ -118,54 +116,62 @@ const sizes = [
 
 			<div class="send-row">
 				<div class="turnstile" data-turnstile data-sitekey={env.TURNSTILE_SITE_KEY}></div>
-				<button class="sticker big send" type="submit" data-send disabled>Send it</button>
+				<button class="sticker big send" type="submit" data-send disabled>send</button>
 			</div>
 			<p class="form-status" role="status" data-status></p>
 		</form>
-		<noscript><p class="paper nojs">The drawing pad needs JavaScript. The wall still works below!</p></noscript>
+		<noscript><p class="paper nojs">the drawing pad needs javascript.</p></noscript>
 
 		<section class="wall" aria-labelledby="wall-title">
 			<h2 id="wall-title">
-				<span class="chunky printed">The wall</span>
+				<span class="chunky printed">the wall</span>
 				<span class="pixel wall-count">{count} {count === 1 ? 'drawing' : 'drawings'}</span>
 			</h2>
 
-			{
-				entries.results.length === 0 ? (
-					<p class="empty">Nothing here yet. Be the first one!</p>
-				) : (
-					<ol class="entries">
-						{entries.results.map((e, i) => (
-							<li class="entry" style={`--tilt:${tilts[i % tilts.length]}deg`}>
-								<figure class="polaroid paper tape">
-									<img
-										src={`/api/drawing/${e.id}`}
-										width={CANVAS.width}
-										height={CANVAS.height}
-										loading={i < 4 ? 'eager' : 'lazy'}
-										decoding="async"
-										alt={`Drawing by ${e.name || 'anonymous'}`}
-									/>
-									<figcaption>
-										<span class="who">{e.name || 'anonymous'}</span>
-										<span class="when pixel">
-											#{count - offset - i} · {formatDate(e.created_at)}
-										</span>
-										{e.message && <span class="msg">{e.message}</span>}
-									</figcaption>
-								</figure>
-							</li>
-						))}
-					</ol>
-				)
-			}
+			<ol class="entries">
+				{entries.results.map((e, i) => (
+					<li class="entry" style={`--tilt:${tilts[i % tilts.length]}deg`}>
+						<figure class="polaroid paper tape">
+							<img
+								src={`/api/drawing/${e.id}`}
+								width={CANVAS.width}
+								height={CANVAS.height}
+								loading={i < 4 ? 'eager' : 'lazy'}
+								decoding="async"
+								alt={`Drawing by ${e.name || 'anonymous'}`}
+							/>
+							<figcaption>
+								<span class="who">{e.name || 'anonymous'}</span>
+								<span class="when pixel">
+									#{count - offset - i} · {formatDate(e.created_at)}
+								</span>
+								{e.message && <span class="msg">{e.message}</span>}
+							</figcaption>
+						</figure>
+					</li>
+				))}
+				{
+					page === pages && (
+						<li class="entry old" style="--tilt:-3deg">
+							<figure class="polaroid paper tape">
+								<Image src={konamiEntry} alt="Drawing by kris: arrows going up, up, down, down, left, right, left, right, then the letters B and A" width={480} />
+								<figcaption>
+									<span class="who">kris</span>
+									<span class="when pixel">#0 · ???</span>
+									<span class="msg">works on every page</span>
+								</figcaption>
+							</figure>
+						</li>
+					)
+				}
+			</ol>
 
 			{
 				pages > 1 && (
 					<nav class="pager" aria-label="Wall pages">
 						{page > 1 && (
 							<a class="sticker" href={page === 2 ? '/guestbook/' : `/guestbook/?page=${page - 1}`}>
-								« Newer
+								newer
 							</a>
 						)}
 						<span class="pixel">
@@ -173,7 +179,7 @@ const sizes = [
 						</span>
 						{page < pages && (
 							<a class="sticker" href={`/guestbook/?page=${page + 1}`}>
-								Older »
+								older
 							</a>
 						)}
 					</nav>
@@ -193,35 +199,14 @@ const sizes = [
 	}
 
 	h1 {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0 0.35em;
-	}
-
-	h1 .scrawl {
 		font-size: clamp(2.6rem, 7vw, 4.6rem);
 		rotate: -2deg;
-	}
-
-	h1 .script {
-		font-size: clamp(2rem, 4vw, 3rem);
 	}
 
 	.lede {
 		max-width: 52ch;
 		margin-top: 14px;
 		font-size: 1.15rem;
-	}
-
-	.new {
-		display: inline-block;
-		margin-left: 0.4em;
-		padding: 1px 6px;
-		background: var(--red);
-		color: #fff;
-		font-size: 0.75rem;
-		rotate: 6deg;
 	}
 
 	/* ---------- drawing pad ---------- */
@@ -264,9 +249,12 @@ const sizes = [
 
 	legend {
 		float: left;
-		margin-right: 6px;
-		font-family: var(--font-pixel);
-		font-size: 0.75rem;
+		margin-right: 4px;
+		color: var(--ink-soft);
+	}
+
+	legend :global(.icon) {
+		display: block;
 	}
 
 	.swatch,
@@ -341,24 +329,26 @@ const sizes = [
 	}
 
 	.tool {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 42px;
+		height: 42px;
 		margin-left: 6px;
-		padding: 3px 10px;
 		border: 2px solid var(--ink);
-		border-radius: 999px;
-		font-weight: 700;
-		font-size: 0.9rem;
+		border-radius: 8px;
+	}
+
+	.tool input {
+		position: absolute;
+		inset: 0;
+		margin: 0;
+		opacity: 0;
 	}
 
 	.tool:has(:checked) {
 		background: var(--ink);
 		color: var(--paper);
-	}
-
-	.tool input {
-		accent-color: var(--red);
 	}
 
 	.actions {
@@ -368,12 +358,14 @@ const sizes = [
 	}
 
 	.tool-btn {
-		padding: 5px 12px;
+		display: grid;
+		place-items: center;
+		width: 42px;
+		height: 42px;
+		padding: 0;
 		border: 2px solid var(--ink);
-		border-radius: 6px;
+		border-radius: 8px;
 		background: var(--paper);
-		font-weight: 700;
-		font-size: 0.9rem;
 	}
 
 	.tool-btn:hover:not(:disabled) {
@@ -544,8 +536,15 @@ const sizes = [
 		overflow-wrap: anywhere;
 	}
 
-	.empty {
-		font-size: 1.15rem;
+	/* an old entry, a bit yellowed */
+	.old .polaroid {
+		background: #f6efd9;
+	}
+
+	.old img {
+		width: 100%;
+		height: auto;
+		border: 1px solid rgb(19 6 12 / 0.15);
 	}
 
 	.pager {

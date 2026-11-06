@@ -1,49 +1,47 @@
 ---
+import { Image } from 'astro:assets';
+import wip from '../assets/stickers/wip.png';
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Not found" description="This page isn't here." noindex>
+<Base title="Not found" description="This page isn't here." noindex ground="wires">
 	<div class="lost wrap">
-		<p class="code chunky printed">404</p>
-		<div class="log paper">
-			<p>&gt; Be the missing page.</p>
-			<p>You are now the missing page. You look around. There is nothing here. Not even a drawing.</p>
-			<p>What will you do?</p>
-		</div>
-		<p class="command"><a href="/">&gt; Missing page: Go back to the art. <span aria-hidden="true">==&gt;</span></a></p>
+		<h1 class="code chunky printed">404</h1>
+		<Image class="stamp" src={wip} alt="A red rubber stamp that says: work in progress" width={420} />
+		<p class="say">nothing here. maybe i haven't made it yet</p>
+		<a class="sticker big" style="--tilt:-2deg" href="/">back to the drawings</a>
 	</div>
 </Base>
 
 <style>
 	.lost {
+		position: relative;
 		display: grid;
 		justify-items: start;
-		gap: 24px;
+		gap: 20px;
 		padding-top: clamp(12px, 3vw, 40px);
 	}
 
 	.code {
 		margin: 0;
-		font-size: clamp(4rem, 14vw, 9rem);
+		font-size: clamp(5rem, 18vw, 12rem);
 		color: var(--red);
 		rotate: -3deg;
 	}
 
-	.log {
-		max-width: 640px;
-		padding: clamp(18px, 3vw, 28px);
-		font-family: 'Courier New', monospace;
-		font-weight: 700;
-		font-size: 1.05rem;
+	.stamp {
+		position: absolute;
+		top: clamp(30px, 6vw, 90px);
+		left: clamp(120px, 26vw, 380px);
+		width: clamp(200px, 32vw, 420px);
+		height: auto;
+		rotate: -14deg;
+		mix-blend-mode: multiply;
+		pointer-events: none;
 	}
 
-	.log p:last-child {
+	.say {
 		margin: 0;
-	}
-
-	.command {
-		font-family: 'Courier New', monospace;
-		font-weight: 700;
-		font-size: 1.15rem;
+		font-size: clamp(1.15rem, 2vw, 1.4rem);
 	}
 </style>
