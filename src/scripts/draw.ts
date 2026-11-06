@@ -33,11 +33,14 @@ if (form) {
 	};
 	blank();
 
+	const message = form.elements.namedItem('message') as HTMLTextAreaElement;
+	// A message alone is enough, so people who can't draw with a pointer can still sign.
 	const sync = () => {
 		undoBtn.disabled = history.length === 0;
 		clearBtn.disabled = saveBtn.disabled = !drawn;
-		sendBtn.disabled = !drawn;
+		sendBtn.disabled = !drawn && !message.value.trim();
 	};
+	message.addEventListener('input', sync);
 
 	const snapshot = () => {
 		history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
@@ -141,13 +144,27 @@ if (form) {
 	form.addEventListener('pointerdown', loadTurnstile, { once: true });
 	form.addEventListener('focusin', loadTurnstile, { once: true });
 
+	const tokenReady = async () => {
+		for (let i = 0; i < 40; i++) {
+			const t = form.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]');
+			if (t?.value) return true;
+			await new Promise((r) => setTimeout(r, 250));
+		}
+		return false;
+	};
+
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
-		if (!drawn) return;
+		if (!drawn && !message.value.trim()) return;
 		sendBtn.disabled = true;
 		status.className = 'form-status';
-		status.textContent = 'Sending…';
 		try {
+			loadTurnstile();
+			status.textContent = 'Checking you’re a human…';
+			if (!(await tokenReady())) {
+				throw new Error('The human check didn’t load. If something blocks challenges.cloudflare.com, allow it and try again.');
+			}
+			status.textContent = 'Sending…';
 			const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
 			const data = new FormData(form);
 			data.delete('colour');

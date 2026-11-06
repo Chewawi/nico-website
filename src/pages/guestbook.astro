@@ -112,7 +112,7 @@ const sizes = [
 					<textarea name="message" maxlength={LIMITS.message} rows="2"></textarea>
 				</label>
 				<label class="hp" aria-hidden="true">
-					Website <input name="website" tabindex="-1" autocomplete="off" />
+					Leave this empty <input name="hp_extra" tabindex="-1" autocomplete="off" />
 				</label>
 			</div>
 
@@ -319,6 +319,14 @@ const sizes = [
 
 	.size {
 		border-radius: 6px;
+	}
+
+	@media (pointer: coarse) {
+		.swatch,
+		.size {
+			width: 38px;
+			height: 38px;
+		}
 	}
 
 	.size:has(:checked) {

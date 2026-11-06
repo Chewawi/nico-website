@@ -123,23 +123,66 @@ import Base from '../layouts/Base.astro';
 		height: auto;
 	}
 
+	/* phones: title on top, the collage tucks in beside the intro so the drawings show up sooner */
 	@media (max-width: 760px) {
 		.hero {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr) 38%;
+			grid-template-areas:
+				'title title'
+				'intro collage'
+				'ctas collage';
+			align-items: start;
+			gap: 0 14px;
+		}
+
+		.hello-text {
+			display: contents;
+		}
+
+		h1 {
+			grid-area: title;
+		}
+
+		.intro {
+			grid-area: intro;
+			margin-top: 12px;
+			font-size: 1.05rem;
+		}
+
+		.ctas {
+			grid-area: ctas;
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 12px;
+		}
+
+		.ctas .sticker {
+			font-size: 0.85rem;
 		}
 
 		.collage {
-			width: min(72%, 280px);
-			padding: 0 34px 20px 0;
-			margin-left: 18%;
+			grid-area: collage;
+			width: 100%;
+			padding: 14px 18px 0 0;
+		}
+
+		.print {
+			padding: 6px 6px 20px;
 		}
 
 		.print :global(img) {
-			max-height: 300px;
+			max-height: 230px;
 		}
 
 		.flower {
-			left: -36%;
+			left: -28px;
+			bottom: -34px;
+			width: 74px;
+		}
+
+		.fun-sign {
+			right: -4px;
+			width: 48px;
 		}
 	}
 </style>

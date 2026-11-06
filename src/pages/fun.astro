@@ -8,14 +8,17 @@ import Base from '../layouts/Base.astro';
 	<div class="room" data-room>
 		<h1 class="sr-only">The fun room</h1>
 		<div class="tree-wrap">
-			<img class="tree pixelated" src="/decor/deltarune-tree.gif" width="637" height="358" alt="An animated pixel-art tree with red and magenta leaves, swaying" />
+			<picture>
+				<source media="(prefers-reduced-motion: reduce)" srcset="/decor/deltarune-tree-still.png" />
+				<img class="tree pixelated" src="/decor/deltarune-tree.gif" width="637" height="358" alt="A pixel-art tree with red and magenta leaves" />
+			</picture>
 			<p class="check pixel">* (It's a tree. It sways in a wind you can't feel.)</p>
 		</div>
 
 		<a class="cutout exit" href="/" aria-label="Exit. Way out, back to the art">
 			<Image src={exitSign} alt="" width={150} />
 		</a>
-		<button class="cutout penguin" type="button" data-egg="hello" aria-label="Penguin. Says hello (plays a sound)">
+		<button class="cutout penguin" type="button" data-egg="hello" aria-label="Penguin. Says hello">
 			<img class="pixelated" src="/decor/penguin.png" alt="" width="36" height="60" />
 		</button>
 
@@ -56,7 +59,7 @@ import Base from '../layouts/Base.astro';
 		z-index: 1;
 		mix-blend-mode: screen;
 		background: radial-gradient(380px circle at var(--x) var(--y), rgb(255 170 80 / 0.22), rgb(7 5 12 / 0) 70%);
-		animation: flicker 3.4s steps(6) infinite;
+		animation: flicker 3.4s steps(6) 8;
 		pointer-events: none;
 	}
 
@@ -107,6 +110,7 @@ import Base from '../layouts/Base.astro';
 
 	.penguin {
 		--r: -4deg;
+		filter: drop-shadow(0 0 6px rgb(255 210 122 / 0.75));
 		position: absolute;
 		right: clamp(16px, 8vw, 120px);
 		top: 18%;

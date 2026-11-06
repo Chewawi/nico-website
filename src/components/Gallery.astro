@@ -9,19 +9,18 @@ const categories = inFileOrder(await getCollection('categories'), categoriesYaml
 const labels = new Map(categories.map((c) => [c.id, c.data.label]));
 const works = inFileOrder(await getCollection('works'), worksYaml).filter((w) => labels.has(w.data.category.id));
 
-type Shape = 'sq' | 'wide' | 'tall' | 'big' | 'bigwide' | 'bigtall';
+type Shape = 'sq' | 'wide' | 'tall' | 'big' | 'bigwide';
 
 const layout: Record<Shape, { widths: number[]; sizes: string }> = {
 	sq: { widths: [200, 300, 400, 600], sizes: '(min-width: 1080px) 190px, (min-width: 680px) 23vw, 46vw' },
 	tall: { widths: [200, 300, 400, 600], sizes: '(min-width: 1080px) 190px, (min-width: 680px) 23vw, 46vw' },
 	wide: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
 	big: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
-	bigtall: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
 	bigwide: { widths: [600, 900, 1200], sizes: '(min-width: 1080px) 790px, 92vw' },
 };
 
 function shapeOf(ratio: number, featured: boolean): Shape {
-	if (featured) return ratio >= 1.45 ? 'bigwide' : ratio <= 0.7 ? 'bigtall' : 'big';
+	if (featured) return ratio >= 1.45 ? 'bigwide' : 'big';
 	return ratio >= 1.6 ? 'wide' : ratio <= 0.7 ? 'tall' : 'sq';
 }
 
@@ -84,7 +83,7 @@ const chips = categories.filter((c) => counts.has(c.id));
 						class="work paper tape"
 						id={`w-${it.id}`}
 						href={it.large.src}
-						style={`--tilt:${it.tilt}deg;--tape-tilt:${-it.tilt * 2}deg;view-transition-name:w-${it.id}`}
+						style={`--tilt:${it.tilt}deg;--tape-tilt:${-it.tilt * 2}deg`}
 						data-id={it.id}
 						data-title={it.title}
 						data-meta={it.meta}
@@ -100,8 +99,7 @@ const chips = categories.filter((c) => counts.has(c.id));
 							fallbackFormat="webp"
 							widths={it.widths}
 							sizes={it.sizes}
-							loading={i < 6 ? 'eager' : 'lazy'}
-							fetchpriority={i < 2 ? 'high' : 'auto'}
+							loading={i < 2 ? 'eager' : 'lazy'}
 						/>
 						<span class="label">
 							<span class="label-title">{it.title}</span>
@@ -236,11 +234,6 @@ const chips = categories.filter((c) => counts.has(c.id));
 		grid-row: span 2;
 	}
 
-	.bigtall {
-		grid-column: span 2;
-		grid-row: span 3;
-	}
-
 	@container (max-width: 619px) {
 		.bigwide {
 			grid-row: span 1;
@@ -288,11 +281,14 @@ const chips = categories.filter((c) => counts.has(c.id));
 		object-fit: contain;
 	}
 
+	/* hangs off the bottom of the card like a tag, so it never covers the drawing */
 	.label {
 		position: absolute;
-		left: 8px;
-		bottom: 8px;
-		max-width: calc(100% - 16px);
+		left: 10px;
+		top: calc(100% - 12px);
+		max-width: calc(100% - 20px);
+		rotate: -1.5deg;
+		box-shadow: var(--shadow);
 		display: grid;
 		padding: 4px 8px 5px;
 		background: var(--paper);
@@ -340,6 +336,7 @@ const chips = categories.filter((c) => counts.has(c.id));
 	}
 
 	.too-bad {
+		font-size: max(1.2rem, 1em);
 		font-family: var(--font-chunky);
 		color: var(--red);
 		font-style: normal;

@@ -8,7 +8,7 @@ export const POST: APIRoute = async ({ request }) => {
 	if (!form) return json({ error: 'That submission looked broken. Try again?' }, 400);
 
 	// Honeypot: bots fill every field; pretend it worked.
-	if (form.get('website')) return json({ ok: true }, 201);
+	if (form.get('hp_extra')) return json({ ok: true }, 201);
 
 	if (!(await verifyTurnstile(form.get('cf-turnstile-response'), request.headers.get('cf-connecting-ip')))) {
 		return json({ error: "Couldn't check that you're a human. Reload the page and try again." }, 403);

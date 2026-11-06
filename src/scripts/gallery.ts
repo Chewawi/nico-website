@@ -7,19 +7,27 @@ const img = q<HTMLImageElement>('[data-lb-img]', dialog);
 const stage = q('[data-lb-stage]', dialog);
 let current: HTMLAnchorElement | undefined;
 
-const visible = () => cards.filter((c) => !c.parentElement!.hidden);
+// Dense packing can move cards; step through them in the order they appear on screen.
+const visible = () =>
+	cards
+		.filter((c) => !c.parentElement!.hidden)
+		.map((c) => ({ c, r: c.parentElement!.getBoundingClientRect() }))
+		.sort((a, b) => Math.round(a.r.top - b.r.top) || a.r.left - b.r.left)
+		.map(({ c }) => c);
+let pushed = false;
 
 function load(card: HTMLAnchorElement, target = img) {
 	const d = card.dataset;
+	const fit = Math.min(stage.clientWidth || innerWidth, (stage.clientHeight || innerHeight) * (Number(d.w) / Number(d.h)));
+	target.sizes = `${Math.ceil(fit)}px`;
 	target.srcset = d.srcset!;
-	target.sizes = '(min-width: 1200px) 80vw, 100vw';
 	target.src = card.href;
 	target.width = Number(d.w);
 	target.height = Number(d.h);
 	target.alt = d.alt ?? '';
 }
 
-function show(card: HTMLAnchorElement) {
+function show(card: HTMLAnchorElement, first = false) {
 	current = card;
 	const list = visible();
 	const i = list.indexOf(card);
@@ -32,7 +40,12 @@ function show(card: HTMLAnchorElement) {
 	q('[data-lb-title]', dialog).textContent = card.dataset.title!;
 	q('[data-lb-meta]', dialog).textContent = card.dataset.meta ?? '';
 	q('[data-lb-count]', dialog).textContent = `${String(i + 1).padStart(2, '0')} / ${String(list.length).padStart(2, '0')}`;
-	history.replaceState(null, '', `${location.pathname}${location.search}#${card.dataset.id}`);
+	const url = `${location.pathname}${location.search}#${card.dataset.id}`;
+	// The first picture gets its own history entry so Back closes the viewer.
+	if (first && !location.hash) {
+		history.pushState(null, '', url);
+		pushed = true;
+	} else history.replaceState(null, '', url);
 	for (const n of [list[i - 1], list[i + 1]]) if (n) load(n, new Image());
 }
 
@@ -43,8 +56,9 @@ function step(by: number) {
 }
 
 function open(card: HTMLAnchorElement) {
-	show(card);
-	if (!dialog.open) dialog.showModal();
+	const first = !dialog.open;
+	if (first) dialog.showModal();
+	show(card, first);
 }
 
 for (const card of cards) {
@@ -74,8 +88,16 @@ dialog.addEventListener('click', (e) => {
 });
 
 dialog.addEventListener('close', () => {
-	history.replaceState(null, '', location.pathname + location.search);
+	if (pushed) history.back();
+	else history.replaceState(null, '', location.pathname + location.search);
+	pushed = false;
 	current?.focus();
+});
+
+addEventListener('popstate', () => {
+	if (!dialog.open) return;
+	pushed = false;
+	dialog.close();
 });
 
 let startX = 0;
@@ -88,12 +110,16 @@ stage.addEventListener('pointerup', (e) => {
 // ---------- category filter ----------
 
 const filters = document.querySelector<HTMLElement>('[data-filters]');
-const status = q('[data-filter-status]');
+const filterStatus = q('[data-filter-status]');
 
 function apply(cat: string, announce = true) {
 	if (!filters) return;
 	const chips = [...filters.querySelectorAll<HTMLButtonElement>('[data-filter]')];
 	if (!chips.some((c) => c.dataset.filter === cat)) cat = 'all';
+	// Only cards that are on screen before or after get a transition name, so big galleries stay quick.
+	const name = (on: boolean) => {
+		for (const card of cards) card.style.viewTransitionName = on && !card.parentElement!.hidden ? `w-${card.dataset.id}` : '';
+	};
 	const update = () => {
 		for (const chip of chips) chip.setAttribute('aria-pressed', String(chip.dataset.filter === cat));
 		for (const card of cards) {
@@ -101,13 +127,20 @@ function apply(cat: string, announce = true) {
 			li.hidden = cat !== 'all' && li.dataset.category !== cat;
 		}
 	};
-	if (announce && document.startViewTransition && !reduced.matches) document.startViewTransition(update);
-	else update();
+	if (announce && document.startViewTransition && !reduced.matches) {
+		name(true);
+		const t = document.startViewTransition(() => {
+			name(false);
+			update();
+			name(true);
+		});
+		t.finished.finally(() => name(false));
+	} else update();
 	const url = new URL(location.href);
 	if (cat === 'all') url.searchParams.delete('c');
 	else url.searchParams.set('c', cat);
 	history.replaceState(null, '', url);
-	if (announce) status.textContent = `Showing ${visible().length} works`;
+	if (announce) filterStatus.textContent = `Showing ${visible().length} works`;
 }
 
 if (filters) {

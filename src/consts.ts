@@ -11,7 +11,6 @@ export const SOCIALS = [
 export const LINKS = {
 	uruguay: 'https://www.youtube.com/watch?v=c5CQgsFJm0c',
 	sunflower: 'https://www.youtube.com/watch?v=v6ofxD4fLms',
-	helloSound: 'https://static.wikia.nocookie.net/oneshot/images/e/ec/HELLO.ogg',
 } as const;
 
 export const NAV = [

@@ -1,4 +1,3 @@
-const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const box = document.querySelector<HTMLElement>('[data-textbox]');
 let boxTimer: number | undefined;
 
@@ -71,6 +70,7 @@ const eggs: Record<string, (el: HTMLElement) => void> = {
 	bug(el) {
 		blip([1400, 1800, 2200], 0.04);
 		el.classList.add('flown');
+		setTimeout(() => (el.hidden = true), 1300);
 		say('* The ladybug flew away.\n* It will be back on the next page.', 3500);
 	},
 	viewed(el) {
@@ -99,7 +99,6 @@ addEventListener('keydown', (e) => {
 	const dark = document.documentElement.classList.toggle('dark-world');
 	if (dark) sessionStorage.setItem('dark-world', '1');
 	else sessionStorage.removeItem('dark-world');
-	blip(dark ? [330, 247, 196, 147] : [147, 196, 247, 330], 0.12);
 	say(dark ? '* You fell into the DARK WORLD.\n* (Type the code again to go back.)' : '* You returned to the LIGHT WORLD.');
 });
 
@@ -108,13 +107,11 @@ const counter = document.querySelector<HTMLElement>('[data-counter]');
 if (counter) {
 	const counted = sessionStorage.getItem('counted');
 	fetch('/api/hits', { method: counted ? 'GET' : 'POST' })
-		.then((r) => (r.ok ? r.json() : Promise.reject()))
-		.then(({ count }: { count: number }) => {
+		.then((r) => (r.ok ? (r.json() as Promise<{ count: number }>) : Promise.reject()))
+		.then(({ count }) => {
 			sessionStorage.setItem('counted', '1');
 			counter.querySelector('[data-digits]')!.textContent = String(count).padStart(6, '0');
 			counter.hidden = false;
 		})
 		.catch(() => {});
 }
-
-export { reduced };
