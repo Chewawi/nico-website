@@ -1,0 +1,481 @@
+---
+import { getImage, Picture } from 'astro:assets';
+import { getCollection } from 'astro:content';
+
+const categories = (await getCollection('categories')).filter((c) => !c.data.hidden);
+const labels = new Map(categories.map((c) => [c.id, c.data.label]));
+const works = (await getCollection('works')).filter((w) => labels.has(w.data.category.id));
+
+type Shape = 'sq' | 'wide' | 'tall' | 'big' | 'bigwide' | 'bigtall';
+
+const layout: Record<Shape, { widths: number[]; sizes: string }> = {
+	sq: { widths: [200, 300, 400, 600], sizes: '(min-width: 1080px) 190px, (min-width: 680px) 23vw, 46vw' },
+	tall: { widths: [200, 300, 400, 600], sizes: '(min-width: 1080px) 190px, (min-width: 680px) 23vw, 46vw' },
+	wide: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
+	big: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
+	bigtall: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
+	bigwide: { widths: [600, 900, 1200], sizes: '(min-width: 1080px) 790px, 92vw' },
+};
+
+function shapeOf(ratio: number, featured: boolean): Shape {
+	if (featured) return ratio >= 1.45 ? 'bigwide' : ratio <= 0.7 ? 'bigtall' : 'big';
+	return ratio >= 1.6 ? 'wide' : ratio <= 0.7 ? 'tall' : 'sq';
+}
+
+const items = await Promise.all(
+	works.map(async (work, i) => {
+		const { image, featured, title, year, medium, category } = work.data;
+		const shape = shapeOf(image.width / image.height, featured);
+		const fit = (ws: number[]) => {
+			const ok = ws.filter((w) => w < image.width);
+			return ok.length ? [...ok, ...(ok.length < ws.length ? [image.width] : [])] : [image.width];
+		};
+		const large = await getImage({ src: image, widths: fit([1000, 1600, 2200]), format: 'webp' });
+		return {
+			id: work.id,
+			image,
+			title,
+			alt: work.data.alt ?? title,
+			meta: [year, medium, labels.get(category.id)].filter(Boolean).join(' · '),
+			category: category.id,
+			shape,
+			widths: fit(layout[shape].widths),
+			sizes: layout[shape].sizes,
+			tilt: (((i * 37) % 7) - 3) * 0.45,
+			large,
+		};
+	}),
+);
+
+const counts = new Map<string, number>();
+for (const it of items) counts.set(it.category, (counts.get(it.category) ?? 0) + 1);
+const chips = categories.filter((c) => counts.has(c.id));
+---
+
+<section id="gallery" class="gallery wrap" aria-labelledby="gallery-title">
+	<div class="gallery-head">
+		<h2 id="gallery-title">
+			<span class="scrawl">darwings</span>
+			<span class="script">(drawings)</span>
+		</h2>
+		<div class="chips" role="group" aria-label="Filter by category" data-filters hidden>
+			<button class="sticker" type="button" data-filter="all" aria-pressed="true">
+				All <span class="count">{items.length}</span>
+			</button>
+			{
+				chips.map((c) => (
+					<button class="sticker" type="button" data-filter={c.id} aria-pressed="false">
+						{c.data.label} <span class="count">{counts.get(c.id)}</span>
+					</button>
+				))
+			}
+		</div>
+	</div>
+	<p class="sr-only" aria-live="polite" data-filter-status></p>
+
+	<ul class="bento" data-gallery>
+		{
+			items.map((it, i) => (
+				<li class={`cell ${it.shape}`} data-category={it.category}>
+					<a
+						class="work paper tape"
+						id={`w-${it.id}`}
+						href={it.large.src}
+						style={`--tilt:${it.tilt}deg;--tape-tilt:${-it.tilt * 2}deg;view-transition-name:w-${it.id}`}
+						data-id={it.id}
+						data-title={it.title}
+						data-meta={it.meta}
+						data-alt={it.alt}
+						data-srcset={it.large.srcSet.attribute}
+						data-w={it.image.width}
+						data-h={it.image.height}
+					>
+						<Picture
+							src={it.image}
+							alt={it.alt}
+							formats={['avif']}
+							fallbackFormat="webp"
+							widths={it.widths}
+							sizes={it.sizes}
+							loading={i < 6 ? 'eager' : 'lazy'}
+							fetchpriority={i < 2 ? 'high' : 'auto'}
+						/>
+						<span class="label">
+							<span class="label-title">{it.title}</span>
+							{it.meta && <span class="label-meta">{it.meta}</span>}
+						</span>
+					</a>
+				</li>
+			))
+		}
+	</ul>
+
+	<p class="missing">
+		<span class="chunky printed">is there one missing?</span>
+		<em class="too-bad">too bad</em>
+		<a class="script" href="/guestbook/">(tell me)</a>
+	</p>
+</section>
+
+<dialog class="lightbox" aria-labelledby="lb-title" data-lightbox>
+	<div class="lb-stage" data-lb-stage>
+		<img class="lb-img" alt="" data-lb-img />
+	</div>
+	<div class="lb-bar">
+		<p class="lb-count pixel" data-lb-count></p>
+		<div class="lb-text">
+			<h2 id="lb-title" class="lb-title" data-lb-title></h2>
+			<p class="lb-meta" data-lb-meta></p>
+		</div>
+		<div class="lb-nav">
+			<button class="lb-btn" type="button" data-lb-prev aria-label="Previous artwork">
+				<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+			</button>
+			<button class="lb-btn" type="button" data-lb-next aria-label="Next artwork">
+				<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+			</button>
+			<button class="lb-btn" type="button" data-lb-close aria-label="Close viewer">
+				<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></svg>
+			</button>
+		</div>
+	</div>
+</dialog>
+
+<script>
+	import '../scripts/gallery';
+</script>
+
+<style>
+	.gallery {
+		container-type: inline-size;
+		scroll-margin-top: 12px;
+	}
+
+	.gallery-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		justify-content: space-between;
+		gap: 14px 24px;
+		margin-bottom: clamp(26px, 4vw, 40px);
+	}
+
+	h2 .scrawl {
+		font-size: clamp(2.2rem, 5vw, 3.4rem);
+	}
+
+	h2 .script {
+		margin-left: 0.1em;
+		font-size: clamp(1.5rem, 3vw, 2rem);
+	}
+
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	.chips[hidden] {
+		display: none;
+	}
+
+	.chips .sticker {
+		font-size: 0.8rem;
+		box-shadow: 2px 2px 0 var(--ink);
+	}
+
+	.count {
+		font-family: var(--font-pixel);
+		font-size: 0.75em;
+		opacity: 0.75;
+	}
+
+	/* bento: square cells; pieces span by aspect ratio and how featured they are */
+	.bento {
+		--cols: 2;
+		display: grid;
+		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+		grid-auto-rows: calc((100cqi - (var(--cols) - 1) * var(--gap)) / var(--cols));
+		grid-auto-flow: dense;
+		gap: calc(var(--gap) + 6px) var(--gap);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	@container (min-width: 620px) {
+		.bento {
+			--cols: 4;
+		}
+	}
+
+	@container (min-width: 1000px) {
+		.bento {
+			--cols: 6;
+		}
+	}
+
+	.cell[hidden] {
+		display: none;
+	}
+
+	.wide {
+		grid-column: span 2;
+	}
+
+	.tall {
+		grid-row: span 2;
+	}
+
+	.big,
+	.bigwide {
+		grid-column: span 2;
+		grid-row: span 2;
+	}
+
+	.bigtall {
+		grid-column: span 2;
+		grid-row: span 3;
+	}
+
+	@container (max-width: 619px) {
+		.bigwide {
+			grid-row: span 1;
+		}
+	}
+
+	@container (min-width: 620px) {
+		.bigwide {
+			grid-column: span 4;
+		}
+	}
+
+	.work {
+		position: relative;
+		display: block;
+		height: 100%;
+		padding: clamp(6px, 4%, 12px);
+		rotate: var(--tilt);
+		text-decoration: none;
+		transition:
+			rotate 0.3s var(--ease),
+			translate 0.25s var(--ease),
+			box-shadow 0.25s ease;
+	}
+
+	.work:hover,
+	.work:focus-visible {
+		rotate: 0deg;
+		translate: 0 -3px;
+		box-shadow: var(--shadow-lift);
+		z-index: 3;
+	}
+
+	.work:focus-visible {
+		outline-offset: 4px;
+	}
+
+	.work :global(picture),
+	.work :global(img) {
+		width: 100%;
+		height: 100%;
+	}
+
+	.work :global(img) {
+		object-fit: contain;
+	}
+
+	.label {
+		position: absolute;
+		left: 8px;
+		bottom: 8px;
+		max-width: calc(100% - 16px);
+		display: grid;
+		padding: 4px 8px 5px;
+		background: var(--paper);
+		border: var(--line);
+		border-color: var(--ink);
+		color: var(--ink);
+		font-size: 0.82rem;
+		line-height: 1.25;
+		opacity: 0;
+		translate: 0 4px;
+		transition:
+			opacity 0.2s,
+			translate 0.2s;
+	}
+
+	.label-title {
+		font-weight: 700;
+	}
+
+	.label-meta {
+		font-size: 0.72rem;
+	}
+
+	.work:hover .label,
+	.work:focus-visible .label {
+		opacity: 1;
+		translate: 0 0;
+	}
+
+	@media (hover: none) {
+		.label {
+			display: none;
+		}
+	}
+
+	.missing {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: center;
+		gap: 0.2em 0.6em;
+		margin: clamp(44px, 7vw, 72px) 0 0;
+		font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+		text-align: center;
+	}
+
+	.too-bad {
+		font-family: var(--font-chunky);
+		color: var(--red);
+		font-style: normal;
+		text-transform: uppercase;
+		rotate: -4deg;
+	}
+
+	:root.dark-world .too-bad {
+		color: #ff4d62;
+	}
+
+	.missing .script {
+		font-size: 1.5em;
+	}
+
+	/* ---------- lightbox ---------- */
+
+	.lightbox {
+		width: 100vw;
+		height: 100dvh;
+		max-width: none;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		display: none;
+		grid-template-rows: 1fr auto;
+		color: #f4ecd8;
+		background:
+			radial-gradient(60% 55% at 50% 42%, rgb(255 170 80 / 0.13), transparent 70%),
+			var(--night);
+	}
+
+	.lightbox[open] {
+		display: grid;
+		animation: lb-in 0.22s ease-out;
+	}
+
+	.lightbox::backdrop {
+		background: var(--night);
+	}
+
+	@keyframes lb-in {
+		from {
+			opacity: 0;
+		}
+	}
+
+	.lb-stage {
+		min-height: 0;
+		display: grid;
+		place-items: center;
+		padding: clamp(14px, 3vw, 36px);
+		touch-action: pan-y;
+	}
+
+	.lb-img {
+		max-width: 100%;
+		max-height: 100%;
+		width: auto;
+		height: auto;
+		object-fit: contain;
+		background: #fff;
+		box-shadow: 0 20px 60px -20px rgb(0 0 0 / 0.8);
+	}
+
+	.lb-img.swap {
+		animation: lb-swap 0.2s ease-out;
+	}
+
+	@keyframes lb-swap {
+		from {
+			opacity: 0.2;
+			scale: 0.985;
+		}
+	}
+
+	.lb-bar {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
+		gap: 12px 20px;
+		padding: 14px clamp(14px, 3vw, 36px) max(16px, env(safe-area-inset-bottom));
+		border-top: 1px solid rgb(244 236 216 / 0.15);
+	}
+
+	.lb-count {
+		margin: 0;
+		font-size: 0.8rem;
+		color: #ffd27a;
+	}
+
+	.lb-title {
+		font-family: var(--font-chunky);
+		font-size: clamp(1rem, 2vw, 1.3rem);
+		text-transform: uppercase;
+	}
+
+	.lb-meta {
+		margin: 2px 0 0;
+		font-size: 0.9rem;
+		color: #cbbfa6;
+	}
+
+	.lb-nav {
+		display: flex;
+		gap: 8px;
+	}
+
+	.lb-btn {
+		display: grid;
+		place-items: center;
+		width: 46px;
+		height: 46px;
+		border: 2px solid #f4ecd8;
+		border-radius: 50%;
+		background: transparent;
+		color: #f4ecd8;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+
+	.lb-btn:hover {
+		background: #f4ecd8;
+		color: var(--night);
+	}
+
+	.lb-btn:focus-visible {
+		outline-color: #ffd27a;
+	}
+
+	@media (max-width: 560px) {
+		.lb-bar {
+			grid-template-columns: 1fr auto;
+		}
+
+		.lb-count {
+			grid-column: 1 / -1;
+		}
+	}
+</style>

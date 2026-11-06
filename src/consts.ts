@@ -1,5 +1,22 @@
-// Place any global data in this file.
-// You can import this data from anywhere in your site by using the `import` keyword.
+export const SITE_TITLE = 'mrnico12';
+export const SITE_DESCRIPTION =
+	'Drawings, doodles and characters by Nicolas (mrnico12), a self-taught uruguayan artist.';
 
-export const SITE_TITLE = 'Astro Blog';
-export const SITE_DESCRIPTION = 'Welcome to my website!';
+export const SOCIALS = [
+	{ name: 'Instagram', handle: '@mrnico12', href: 'https://www.instagram.com/mrnico12/' },
+	{ name: 'Bluesky', handle: '@mrnico12.bsky.social', href: 'https://bsky.app/profile/mrnico12.bsky.social' },
+] as const;
+
+// Links carried over from the old straw.page easter eggs.
+export const LINKS = {
+	uruguay: 'https://www.youtube.com/watch?v=c5CQgsFJm0c',
+	sunflower: 'https://www.youtube.com/watch?v=v6ofxD4fLms',
+	helloSound: 'https://static.wikia.nocookie.net/oneshot/images/e/ec/HELLO.ogg',
+} as const;
+
+export const NAV = [
+	{ href: '/', label: 'Art' },
+	{ href: '/about/', label: 'About' },
+	{ href: '/contact/', label: 'Contact' },
+	{ href: '/guestbook/', label: 'Guestbook' },
+] as const;

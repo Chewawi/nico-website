@@ -1,0 +1,38 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION } from '../consts';
+
+interface Props {
+	title?: string;
+	description?: string;
+	noindex?: boolean;
+	bare?: boolean;
+}
+
+const { title, description = SITE_DESCRIPTION, noindex, bare = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={title} description={description} noindex={noindex} />
+		<script is:inline>
+			if (sessionStorage.getItem('dark-world')) document.documentElement.classList.add('dark-world');
+		</script>
+		<slot name="head" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		{!bare && <Header />}
+		<main id="main">
+			<slot />
+		</main>
+		{!bare && <Footer />}
+		<div class="textbox" role="status" aria-live="polite" hidden data-textbox></div>
+		<script>
+			import '../scripts/eggs';
+		</script>
+	</body>
+</html>

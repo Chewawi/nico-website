@@ -1,59 +1,145 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { Image } from 'astro:assets';
+import pole from '../assets/pole.jpg';
+import funSign from '../assets/stickers/fun-sign.png';
+import sunflower from '../assets/stickers/sunflower.png';
+import Gallery from '../components/Gallery.astro';
+import { LINKS } from '../consts';
+import Base from '../layouts/Base.astro';
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to
-				build a personal website, blog, or portfolio with Astro.
+<Base>
+	<section class="hero wrap" aria-labelledby="hello">
+		<div class="hello-text">
+			<h1 id="hello">
+				<span class="scrawl hello-word">Hello</span>
+				<span class="script friend">friend</span>
+			</h1>
+			<p class="intro">
+				My name is Nicolas. I'm a self-taught,
+				<a href={LINKS.uruguay} target="_blank" rel="noopener">uruguayan</a> 'artist'.
 			</p>
-			<p>
-				This template comes with a few integrations already configured in your{' '}
-				<code>astro.config.mjs</code> file. You can customize your setup with{' '}
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like
-				Tailwind, React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>
-					Edit this page in <code>src/pages/index.astro</code>
-				</li>
-				<li>
-					Edit the site header items in <code>src/components/Header.astro</code>
-				</li>
-				<li>
-					Add your name to the footer in <code>src/components/Footer.astro</code>
-				</li>
-				<li>
-					Check out the included blog posts in <code>src/content/blog/</code>
-				</li>
-				<li>
-					Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code>
-				</li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to{' '}
-				<a href="https://docs.astro.build/">read the docs</a> or{' '}
-				<a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out{' '}
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a> by{' '}
-				<a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
-</html>
+			<div class="ctas">
+				<a class="sticker big" style="--tilt:-2deg" href="#gallery">Wanna check my art?</a>
+				<a class="sticker big" style="--tilt:1.5deg" href="/contact/">Check my socials</a>
+			</div>
+		</div>
+
+		<div class="collage">
+			<div class="print paper tape">
+				<Image src={pole} alt="A utility pole tangled in wires, posterised mustard yellow" widths={[300, 600]} sizes="(min-width: 860px) 320px, 46vw" loading="eager" class="pixelated" />
+			</div>
+			<a class="cutout flower" href={LINKS.sunflower} target="_blank" rel="noopener" data-egg="flower" aria-label="A sunflower. Opens A Home For Flowers from the OMORI soundtrack on YouTube">
+				<Image src={sunflower} alt="" width={180} />
+			</a>
+			<a class="cutout fun-sign" href="/fun/" aria-label="A light-up FUN sign. Go to the fun room">
+				<Image src={funSign} alt="" width={110} />
+			</a>
+		</div>
+	</section>
+
+	<Gallery />
+</Base>
+
+<style>
+	.hero {
+		display: grid;
+		grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+		align-items: center;
+		gap: 24px 40px;
+		padding-block: clamp(12px, 3vw, 40px) clamp(48px, 7vw, 88px);
+	}
+
+	h1 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0 0.3em;
+	}
+
+	.hello-word {
+		font-size: clamp(3.4rem, 10vw, 7.5rem);
+		text-transform: uppercase;
+		rotate: -3deg;
+	}
+
+	.friend {
+		font-size: clamp(2.6rem, 6vw, 4.4rem);
+		rotate: -6deg;
+		translate: 0 0.1em;
+	}
+
+	.intro {
+		max-width: 30ch;
+		margin: clamp(16px, 2.6vw, 28px) 0 clamp(22px, 3vw, 32px);
+		font-size: clamp(1.15rem, 2vw, 1.4rem);
+		line-height: 1.45;
+	}
+
+	.ctas {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 14px 18px;
+	}
+
+	.collage {
+		position: relative;
+		justify-self: center;
+		width: min(100%, 360px);
+		padding: 10px 40px 40px 0;
+	}
+
+	.print {
+		padding: 10px 10px 34px;
+		rotate: 3deg;
+	}
+
+	.print :global(img) {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 2 / 3;
+		object-fit: cover;
+		max-height: 440px;
+	}
+
+	.flower {
+		--r: -12deg;
+		position: absolute;
+		left: -70px;
+		bottom: -6px;
+		width: clamp(110px, 14vw, 170px);
+	}
+
+	.fun-sign {
+		--r: 8deg;
+		position: absolute;
+		right: -6px;
+		top: 34%;
+		width: clamp(70px, 8vw, 104px);
+	}
+
+	.cutout :global(img) {
+		width: 100%;
+		height: auto;
+	}
+
+	@media (max-width: 760px) {
+		.hero {
+			grid-template-columns: 1fr;
+		}
+
+		.collage {
+			width: min(72%, 280px);
+			padding: 0 34px 20px 0;
+			margin-left: 18%;
+		}
+
+		.print :global(img) {
+			max-height: 300px;
+		}
+
+		.flower {
+			left: -36%;
+		}
+	}
+</style>
