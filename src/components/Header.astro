@@ -30,6 +30,8 @@ const tilts = ['-2deg', '1.5deg', '-1deg', '2.5deg'];
 
 <style>
 	.site-header {
+		position: relative;
+		z-index: 2;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -68,6 +70,14 @@ const tilts = ['-2deg', '1.5deg', '-1deg', '2.5deg'];
 		.sticker {
 			font-size: 0.78rem;
 			padding: 0.5em 0.7em 0.42em;
+		}
+	}
+
+	/* very narrow phones: let the stickers wrap instead of running off the screen */
+	@media (max-width: 380px) {
+		ul {
+			display: flex;
+			gap: 8px;
 		}
 	}
 </style>

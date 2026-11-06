@@ -1,0 +1,159 @@
+# Info for the gallery on nico.kodeko.org. Put this file in the top folder of the drawings repo.
+#
+# Everything in here is optional. A drawing that isn't listed still shows up on the site:
+# its title comes from the filename, and it goes after the listed ones, newest first.
+#
+# Listed drawings show in the order they're written here. For each one you can set:
+#   title:     shown on hover and in the viewer         (default: the filename, minus .png)
+#   category:  the filter button it goes under          (default: drawings; "logos" or "sheets" if the name says so)
+#   featured:  true shows it bigger                     (default: false)
+#   alt:       what the picture shows, for people who can't see it   (default: the title)
+#   year:      shown under the title                    (optional)
+#   hidden:    true keeps it off the site               (default: false)
+#
+# The name has to match the file exactly, including capitals and .png.
+# Files whose name starts with _ or ., or contains "DO NOT REPOST", never show up.
+# Only .png .jpg .webp .gif and .avif files are used (.kra, .svg and .ico are skipped).
+
+drawings:
+  Atlas Painted.png:
+    featured: true
+    alt: A dog in a blue beret and red scarf sitting among big pink and orange flowers
+  Ferret.png:
+    alt: A ferret's face up close, framed in pink fur, on turquoise
+  Cherries.png:
+    alt: Two shiny red cherries on a black background
+  Marginola Niko.png:
+    category: fan art
+    featured: true
+    alt: Niko from OneShot in a purple coat and cat-eared hat, drawn in crayon, with the name Niko scribbled above
+  Abeja.png:
+    alt: A fuzzy bumblebee resting on a pale flower, on mint green
+  Becoming an Artist.png:
+    alt: A bearded man in a beanie and glasses pointing at you, in front of a book cover that says Becoming an Artist
+  The Twins.png:
+    featured: true
+    alt: Two round characters racing across a neon night, with the words The Twins
+  morena encajada.png:
+    alt: A black cat sitting in a green wooden chair
+  Blue Lizard.png:
+    alt: A purple lizard climbing over magenta plants at dusk
+  NICO Flavored Pringles.png:
+    featured: true
+    alt: A pink Pringles can labelled NICO, with chips floating around it in a dark sky
+  Dead Pirate.png:
+    alt: A yellow skull in a pink bandana, spilling gold coins
+  Faro PNG.png:
+    title: Faro
+    alt: A red and white lighthouse on a dark rocky island, with snowy hills behind
+  Lady.png:
+    alt: A black and tan dog with a white chest, on orange
+  ruggedy man.png:
+    alt: A man with a dark beard and slicked-back hair, half in deep blue shadow
+  Atlas furdos.png:
+    alt: A fox in a dark coat holding a mug, on a warm orange background
+  Vikingo.png:
+    alt: A viking with a huge red beard and a horned blue helmet, on dark green
+  psychedelicgirl.png:
+    alt: A figure in a red hoodie and a wide black hat, against streaks of red and yellow
+  Hornet Lava Bucket.png:
+    category: fan art
+    alt: Hornet from Hollow Knight holding her needle, in red and black
+  scoligummy.png:
+    alt: A red gummy centipede on lime green, labelled Gummipede
+  Jakecake.png:
+    category: fan art
+    alt: Jake from Adventure Time as a cupcake, floating in a pink and orange sky
+  padre.png:
+    alt: A man in a grey hoodie looking down, sketched in soft colours
+  Lighthouse Design.png:
+    alt: A striped lighthouse and a small house by the sea, in a black frame
+  erispendeja.png:
+    alt: A ginger cat with a green scarf, in soft pastels
+  dumpling.png:
+    category: fan art
+    alt: Bulbasaur peeking out of a dumpling held up by chopsticks
+  Ironing Man.png:
+    alt: A man drawn in blues kneeling to iron, on orange
+  NatART.png:
+    alt: A blonde girl with a green blindfold, framed by green triangles
+  MORA MORA MORA.png:
+    alt: A grey cat's face in flat shapes, with the word MORA repeated behind it
+  gatitofeito.png:
+    alt: A lilac sketch of a cat's face up close
+  HAMBO.png:
+    alt: A patched-up teddy bear with a button eye and a little crown, on pink
+  Chubby.png:
+    alt: A bearded man in a white sleeveless shirt in front of red flowers
+  Lion.png:
+    alt: A small orange lion in warm, glowing light
+  not an apple.png:
+    alt: An apple core walking on long spider legs
+  non juicy apple.png:
+    alt: An apple core with a picture of a whole apple next to it
+  yonkita.png:
+    alt: A white cat in a purple cap and yellow shirt, on pink
+  totiño.png:
+    alt: A yellow dog with one long blue ear and an orange ball
+  Sugar.png:
+    alt: A girl with orange hair in a big witch hat, on pink
+  Max.png:
+    alt: A brown and white dog's head, signed Max
+  Spiky Dan.png:
+    alt: Dan, a brown spiky creature with his tongue out, on orange
+  spikey dangley.png:
+    alt: Dan wearing a blue and red bandana, on coral
+  PANG FLAT.png:
+    alt: Pang, a grey armadillo-like creature in red pants, next to Maple the moth
+  Pang Clown.png:
+    alt: Pang in a jester hat, looking grumpy
+  maploingongiongo.png:
+    alt: A grey moth with rainbow wings, on pink
+  Ralsei.gif:
+    category: fan art
+    alt: Ralsei from Deltarune in pixel art, in his green hat and pink scarf
+  rowlet ball.png:
+    category: fan art
+    alt: Rowlet from Pokémon as a tiny round ball, on blue
+  Peon.png:
+    alt: A grey chess pawn on black
+  Dan sheet test.png:
+    title: Dan sheet
+    alt: Character sheet for Dan, with colour swatches and notes
+  Maple sheet test.png:
+    title: Maple sheet
+    alt: Character sheet for Maple the moth, with colour swatches
+  Pang Sheet test 1.png:
+    title: Pang sheet
+    alt: Character sheet for Pang, from the front, side and back
+  Chewawi.png:
+    alt: The word Chewawi in chunky purple letters
+  Imagotipo.png:
+    title: Kodeko
+    alt: The Kodeko logo, a geometric blue leopard next to the word KODEKO
+  PangTech.png:
+    alt: The PangTech logo, a white circle inside a purple gear
+  Sleeves logo.png:
+    title: Sleeves
+    alt: A vinyl record sliding out of a sleeve that says Sleeves
+  Studios.png:
+    alt: The word Studios in blocky blue letters
+
+  # variations and tests, kept off the site
+  Isotipo.png:
+    hidden: true
+  Logotipo.png:
+    hidden: true
+  imagotipo github.png:
+    hidden: true
+  Github Logo.png:
+    hidden: true
+  test logo1.png:
+    hidden: true
+  sleevesprototipo.png:
+    hidden: true
+  Galapagos 1.png:
+    hidden: true
+
+# categories to leave off the site entirely, e.g. [fan art]
+hide categories: []

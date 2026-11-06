@@ -107,6 +107,77 @@ stage.addEventListener('pointerup', (e) => {
 	if (e.pointerType !== 'mouse' && Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
 });
 
+// ---------- gaps ----------
+// Dense packing can leave empty cells near the end. The "is there one missing?" bubble takes the last gap
+// (or a row of its own), and a sticker covers any other one.
+const grid = q('[data-gallery]');
+const filler = q('[data-filler]', grid);
+const patchArt = [...q<HTMLTemplateElement>('[data-patches]').content.children];
+
+function fill() {
+	for (const old of grid.querySelectorAll('.patch')) old.remove();
+	filler.hidden = true;
+	filler.style.gridColumn = filler.style.gridRow = '';
+	const style = getComputedStyle(grid);
+	const cols = style.gridTemplateColumns.split(' ').length;
+	const gapX = parseFloat(style.columnGap) || 0;
+	const gapY = parseFloat(style.rowGap) || 0;
+	const box = grid.getBoundingClientRect();
+	const track = (box.width - (cols - 1) * gapX) / cols; // rows are square, same size as columns
+	const taken = new Set<string>();
+	let last = -1;
+	for (const li of grid.children as HTMLCollectionOf<HTMLElement>) {
+		if (li === filler || li.hidden) continue;
+		const r = li.getBoundingClientRect();
+		const c0 = Math.round((r.left - box.left) / (track + gapX));
+		const cs = Math.max(1, Math.round((r.width + gapX) / (track + gapX)));
+		const r0 = Math.round((r.top - box.top) / (track + gapY));
+		const rs = Math.max(1, Math.round((r.height + gapY) / (track + gapY)));
+		for (let y = r0; y < r0 + rs; y++) for (let x = c0; x < c0 + cs; x++) taken.add(`${y},${x}`);
+		last = Math.max(last, r0 + rs - 1);
+	}
+
+	// runs of empty cells, row by row
+	const holes: { row: number; col: number; span: number }[] = [];
+	for (let y = 0; y <= last; y++) {
+		for (let x = 0; x < cols; x++) {
+			if (taken.has(`${y},${x}`)) continue;
+			let span = 1;
+			while (x + span < cols && !taken.has(`${y},${x + span}`)) span++;
+			holes.push({ row: y, col: x, span });
+			x += span;
+		}
+	}
+
+	const tail = holes.at(-1);
+	if (tail && tail.row === last && tail.col + tail.span === cols) {
+		holes.pop();
+		filler.style.gridRow = `${tail.row + 1}`;
+		filler.style.gridColumn = `${tail.col + 1} / span ${tail.span}`;
+	} else {
+		filler.style.gridColumn = `${Math.max(1, cols - 2)} / -1`;
+	}
+	filler.hidden = false;
+
+	holes.forEach((hole, i) => {
+		const patch = document.createElement('li');
+		patch.className = 'cell patch';
+		patch.setAttribute('aria-hidden', 'true');
+		patch.style.gridRow = `${hole.row + 1}`;
+		patch.style.gridColumn = `${hole.col + 1} / span ${hole.span}`;
+		patch.style.setProperty('--r', `${i % 2 ? 9 : -8}deg`);
+		patch.append(patchArt[i % patchArt.length].cloneNode(true));
+		grid.insertBefore(patch, filler);
+	});
+}
+
+let gridWidth = 0;
+new ResizeObserver(([entry]) => {
+	if (Math.round(entry.contentRect.width) === gridWidth) return;
+	gridWidth = Math.round(entry.contentRect.width);
+	fill();
+}).observe(grid);
+
 // ---------- category filter ----------
 
 const filters = document.querySelector<HTMLElement>('[data-filters]');
@@ -126,6 +197,7 @@ function apply(cat: string, announce = true) {
 			const li = card.parentElement!;
 			li.hidden = cat !== 'all' && li.dataset.category !== cat;
 		}
+		fill();
 	};
 	if (announce && document.startViewTransition && !reduced.matches) {
 		name(true);

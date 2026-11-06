@@ -3,28 +3,44 @@
 Portfolio of Nicolas (mrnico12): a gallery of drawings, an about page, contact links and a drawing guestbook.
 Built with Astro and deployed to Cloudflare Workers. Everything is prerendered except the guestbook, which uses Cloudflare D1.
 
-## Adding a drawing
+## The drawings
 
-1. Put the image in `src/content/works/images/` (PNG, JPG or WebP; bigger is fine, it gets resized).
-2. Add an entry to `src/content/works/works.yaml`:
+The gallery comes from Nico's repo, [MrDino127/drawings](https://github.com/MrDino127/drawings). Every build clones it
+into `.drawings/` (ignored by git) and shows every PNG, JPG, WebP, GIF or AVIF in it, so adding, changing or deleting a
+drawing there is all it takes. See `src/lib/drawings.ts`.
 
-   ```yaml
-   - id: sunflower            # unique, used in the link: /#sunflower
-     title: Sunflower
-     image: ./images/sunflower.png
-     alt: A sunflower against a blue scribbled sky   # what the picture shows
-     year: 2025
-     medium: Digital
-     category: illustration   # an id from src/content/categories.yaml
-     featured: true           # optional: shows it bigger
-   ```
+Per-drawing info (title, category, featured, alt text, hiding things) goes in an optional `drawings.yaml` at the top of
+his repo. A ready-made starter with every current drawing is in `docs/drawings-repo/drawings.yaml`; the format is
+explained at the top of that file. Without it, titles come from the filenames and everything shows in one category,
+newest first.
 
-The gallery shows works in the order of the file. Filter chips come from `src/content/categories.yaml`;
-set `hidden: true` on a category to hide its chip and all of its works.
+| Setting | What it does |
+| --- | --- |
+| `DRAWINGS_TOKEN` | GitHub token for a private repo (read-only). Only needed when the repo is private. |
+| `DRAWINGS_DIR` | Use a local clone instead of downloading, e.g. `DRAWINGS_DIR=../drawings bun run dev`. Edits show up live. |
+| `DRAWINGS_REPO`, `DRAWINGS_BRANCH` | Another repo or branch (default `MrDino127/drawings`, `main`). |
 
-The placeholder images (`placeholder-*.jpg`) and their entries are there to exercise the layout. Delete them once the real
-drawings are in. When the originals live in their own repo, copy them into `src/content/works/images/` before building.
-The build only reads this folder.
+If the download fails the build fails too, so the live site keeps the last good version. The same goes for a mistake in
+`drawings.yaml`.
+
+### Rebuilding when he pushes
+
+1. **Token (only if the drawings repo is private).** Nico, signed in as MrDino127, makes a fine-grained token at
+   github.com/settings/personal-access-tokens/new: *Repository access* → *Only select repositories* → `drawings`;
+   *Permissions* → *Contents: Read-only* (nothing else). It has to be his account, because fine-grained tokens only
+   reach repos owned by the account that makes them.
+2. **Build from Git on Cloudflare.** Push this project to its own GitHub repo, then in the Cloudflare dashboard go to
+   *Workers & Pages* → `nicoportfolio` → *Settings* → *Builds* → *Connect* and pick it. Build command `bun run build`,
+   deploy command `npx wrangler deploy`.
+3. **The secret.** Same page → *Variables and secrets* (the build ones, not the runtime ones) → add `DRAWINGS_TOKEN`
+   as a *Secret* with the token from step 1.
+4. **Deploy hook.** Same page → *Deploy Hooks* → create one for branch `main` and copy the URL.
+5. **In the drawings repo.** *Settings* → *Secrets and variables* → *Actions* → new repository secret
+   `SITE_DEPLOY_HOOK` with that URL. Then add `docs/drawings-repo/rebuild-site.yml` as
+   `.github/workflows/rebuild-site.yml`, and `docs/drawings-repo/drawings.yaml` at the top level.
+
+From then on every push to his `main` pings the hook and Cloudflare rebuilds the site (a couple of minutes). The
+workflow can also be run by hand from the *Actions* tab.
 
 ## Commands
 
@@ -62,9 +78,12 @@ Submissions stop being accepted while 200 drawings are waiting.
 
 ## Decorations
 
-- `src/assets/decor/doodles.webp` is the wallpaper tile, made from small bits of his drawings (signatures, the kitty,
-  sparkles, the jester hat). `hoodie-dog.png` is the hoodie dog cut out of one drawing. Swap either for a better version anytime.
-- Each page picks its wallpaper with `<Base ground="...">`: `doodles`, `wires`, `sky`, `sparkle` or `none` (see `global.css`).
+- Each page picks its background with `<Base ground="...">`: `plain` (grain and halftone), `wires`, `sky`, `sparkle`
+  or `none` (see `global.css`). The home page fades his pole photo in behind the top, like the straw page did, and puts
+  the drawings on a torn sheet.
 - Found stickers live in `src/assets/stickers/`. They're credited in the footer.
 - The penguin on `/fun/` plays `public/sounds/hello.ogg`.
-- `public/decor/dark-fountain.gif` (and its still frame) is DELTARUNE's Dark Fountain, from the DEVICE menu, shrunk to 320×240.
+- `public/decor/dark-fountain.mp4` is DELTARUNE's Dark Fountain with the green keyed out, stored as "stacked alpha"
+  (picture on top, transparency below) so one H.264 file works everywhere, Safari included; `src/scripts/fountain.ts`
+  puts it back together with WebGL. `scripts/fountain.sh` rebuilds it from the green-screen original.
+- `public/decor/niko.gif` is a found Niko (OneShot) emoji.

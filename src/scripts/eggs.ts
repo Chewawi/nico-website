@@ -1,4 +1,6 @@
-// Small things that react when poked. Sound only ever plays on a click.
+// Small things that react when poked. Sound only ever plays on a click or a keypress.
+import { fountain } from './fountain';
+
 const box = document.querySelector<HTMLElement>('[data-textbox]');
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
 let boxTimer: number | undefined;
@@ -76,6 +78,9 @@ const eggs: Record<string, (el: HTMLElement) => void> = {
 	trinket() {
 		say("* (It's an egg.)", 2500);
 	},
+	niko() {
+		say('* (Niko is thinking about pancakes.)', 3000);
+	},
 };
 
 document.addEventListener('click', (e) => {
@@ -139,6 +144,7 @@ let typed = '';
 const words: Record<string, () => void> = {
 	omori: () => say('* Waiting for something to happen?'),
 	nico: walkDog,
+	wawi: hearts, // also catches "chewawi"
 };
 
 // ---------- Konami code: Deltarune's dark world ----------
@@ -150,36 +156,42 @@ function feed(key: string) {
 	progress = key === konami[progress] ? progress + 1 : key === konami[0] ? 1 : 0;
 	if (progress < konami.length) return;
 	progress = 0;
-	const dark = document.documentElement.classList.toggle('dark-world');
-	if (dark) {
-		sessionStorage.setItem('dark-world', '1');
-		fountain();
-		say('* (You fell into the dark world.)\n* (Same code to leave.)', 6000);
-	} else {
+	const root = document.documentElement;
+	if (root.classList.contains('dark-world')) {
+		root.classList.remove('dark-world');
 		sessionStorage.removeItem('dark-world');
 		say('* (Back in the light world.)', 2500);
+		return;
 	}
+	// the page turns dark once the fountain has flooded the screen
+	fountain({
+		calm: calm.matches,
+		onDark() {
+			root.classList.add('dark-world');
+			sessionStorage.setItem('dark-world', '1');
+			say('* (You fell into the dark world.)\n* (Same code to leave.)', 6000);
+		},
+	});
 }
 
-function fountain() {
-	const el = document.createElement('div');
-	el.className = 'fountain';
-	el.setAttribute('aria-hidden', 'true');
-	el.innerHTML = `<picture>
-		<source media="(prefers-reduced-motion: reduce)" srcset="/decor/dark-fountain-still.png">
-		<img src="/decor/dark-fountain.gif" width="320" height="240" alt="">
-	</picture>
-	<p>dark fountain from DELTARUNE by Toby Fox</p>`;
-	document.body.append(el);
-	const close = () => {
-		el.classList.add('out');
-		setTimeout(() => el.remove(), calm.matches ? 0 : 500);
-		removeEventListener('keydown', onKey);
-	};
-	const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
-	el.addEventListener('click', close);
-	addEventListener('keydown', onKey);
-	setTimeout(close, 4200);
+// ---------- hearts ----------
+
+function hearts() {
+	const colours = ['#df001d', '#f783ac', '#b3005c', '#ff4d62'];
+	for (let i = 0; i < (calm.matches ? 6 : 16); i++) {
+		const heart = document.createElement('span');
+		heart.className = calm.matches ? 'heart still' : 'heart';
+		heart.textContent = '♥';
+		heart.setAttribute('aria-hidden', 'true');
+		heart.style.left = `${4 + Math.random() * 90}vw`;
+		heart.style.color = colours[i % colours.length];
+		heart.style.fontSize = `${18 + Math.random() * 22}px`;
+		heart.style.setProperty('--delay', `${Math.random() * 0.9}s`);
+		heart.style.setProperty('--sway', `${(Math.random() - 0.5) * 80}px`);
+		if (calm.matches) heart.style.top = `${25 + Math.random() * 50}vh`;
+		document.body.append(heart);
+		setTimeout(() => heart.remove(), calm.matches ? 2000 : 4000);
+	}
 }
 
 addEventListener('keydown', (e) => {

@@ -44,9 +44,11 @@ html {
 }
 
 body {
-	--pattern: url('../assets/decor/doodles.webp');
-	--pattern-size: 520px;
+	--pattern: none;
+	--pattern-size: auto;
 	--halftone: radial-gradient(rgb(19 6 12 / 0.07) 0.9px, transparent 1.3px);
+	/* paper grain, so the yellow reads like the printed page it came from */
+	--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .06 0 0 0 0 0 0 0 0 .5 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 	margin: 0;
 	min-height: 100dvh;
 	display: flex;
@@ -56,14 +58,14 @@ body {
 	line-height: 1.55;
 	color: var(--on-ground);
 	background-color: var(--ground);
-	/* halftone dots, like his posterised photo */
-	background-image: var(--halftone);
-	background-size: 5px 5px;
+	/* grain plus halftone dots, like his posterised photo */
+	background-image: var(--grain), var(--halftone);
+	background-size: 260px, 5px 5px;
 	cursor: var(--cursor-arrow), auto;
 	transition: background-color 0.6s, color 0.6s;
 }
 
-/* Wallpaper layer. Each page picks a texture; it drifts a little with scroll and the pointer (see eggs.ts). */
+/* Optional wallpaper layer for some pages; it drifts a little with scroll and the pointer (see eggs.ts). */
 body::before {
 	content: '';
 	position: fixed;
@@ -87,7 +89,7 @@ body[data-ground='sky'] {
 	--halftone: repeating-linear-gradient(transparent 0 31px, rgb(31 79 168 / 0.22) 31px 32px);
 	--pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='%231f4fa8' fill-opacity='.22'%3E%3Cpath d='M40 18l6 13 14 2-10 10 3 14-13-7-12 7 2-14-10-10 14-2z'/%3E%3Cpath d='M165 120l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z'/%3E%3C/g%3E%3C/svg%3E");
 	--pattern-size: 220px;
-	background-size: auto;
+	background-size: 260px, auto;
 }
 
 /* old guestbook sparkle wallpaper */
@@ -493,29 +495,78 @@ button.cutout {
 	position: fixed;
 	z-index: 95;
 	inset: 0;
-	display: grid;
-	place-content: center;
-	justify-items: center;
-	gap: 10px;
-	background: #000;
-	animation: fade-in 0.5s ease-out;
+	animation: fade-in 0.4s ease-out;
 }
 
-.fountain img {
-	width: min(92vw, 640px);
-	height: auto;
-	image-rendering: pixelated;
+.fountain canvas,
+.fountain-still {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
-.fountain p {
+.fountain-still {
+	object-fit: contain;
+	padding: 8vh 4vw;
+}
+
+.fountain-credit {
+	position: absolute;
+	left: 50%;
+	bottom: 12px;
+	translate: -50% 0;
 	margin: 0;
-	color: #7a7290;
+	padding: 3px 8px;
+	background: rgb(0 0 0 / 0.6);
+	color: #d8d0e8;
 	font-size: 0.75rem;
+	white-space: nowrap;
+}
+
+.fountain-sound {
+	position: absolute;
+	right: 16px;
+	bottom: 12px;
+	padding: 6px 12px;
+	border: 2px solid #fff;
+	background: #000;
+	color: #fff;
+	font-family: var(--font-pixel);
+	font-size: 0.8rem;
 }
 
 .fountain.out {
 	opacity: 0;
-	transition: opacity 0.5s;
+	transition: opacity 0.6s;
+}
+
+/* typing "wawi" */
+.heart {
+	position: fixed;
+	z-index: 85;
+	bottom: -40px;
+	pointer-events: none;
+	line-height: 1;
+	text-shadow: 0 1px 0 rgb(19 6 12 / 0.4);
+	animation: float-up 2.8s ease-out var(--delay) both;
+}
+
+@keyframes float-up {
+	from {
+		translate: 0 0;
+	}
+	to {
+		translate: var(--sway) -75vh;
+		rotate: 20deg;
+		opacity: 0;
+	}
+}
+
+.heart.still {
+	bottom: auto;
+	animation: none;
 }
 
 @keyframes fade-in {

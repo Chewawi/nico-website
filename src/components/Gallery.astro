@@ -1,14 +1,15 @@
 ---
 import { getImage, Image, Picture } from 'astro:assets';
-import bubble from '../assets/stickers/bubble.png';
 import { getCollection } from 'astro:content';
-import categoriesYaml from '../content/categories.yaml?raw';
-import worksYaml from '../content/works/works.yaml?raw';
-import { inFileOrder } from '../lib/order';
+import arrows from '../assets/stickers/arrows.png';
+import bubble from '../assets/stickers/bubble.png';
+import cat from '../assets/stickers/cat.png';
+import mushroom from '../assets/stickers/mushroom.png';
+import sunflower from '../assets/stickers/sunflower.png';
 
-const categories = inFileOrder(await getCollection('categories'), categoriesYaml).filter((c) => !c.data.hidden);
-const labels = new Map(categories.map((c) => [c.id, c.data.label]));
-const works = inFileOrder(await getCollection('works'), worksYaml).filter((w) => labels.has(w.data.category.id));
+// Drawings come from Nico's own repo (src/lib/drawings.ts), already in his order.
+const drawings = (await getCollection('drawings')).sort((a, b) => a.data.order - b.data.order);
+const slug = (text: string) => text.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'other';
 
 type Shape = 'sq' | 'wide' | 'tall' | 'big' | 'bigwide';
 
@@ -26,50 +27,67 @@ function shapeOf(ratio: number, featured: boolean): Shape {
 }
 
 const items = await Promise.all(
-	works.map(async (work, i) => {
-		const { image, featured, title, year, medium, category } = work.data;
+	drawings.map(async (drawing, i) => {
+		const { image, featured, title, year, medium, category, alt } = drawing.data;
 		const shape = shapeOf(image.width / image.height, featured);
+		// GIFs keep their animation, so they're shown as they are
+		const animated = image.format === 'gif';
 		const fit = (ws: number[]) => {
 			const ok = ws.filter((w) => w < image.width);
 			return ok.length ? [...ok, ...(ok.length < ws.length ? [image.width] : [])] : [image.width];
 		};
-		const large = await getImage({ src: image, widths: fit([1000, 1600, 2200]), format: 'webp' });
+		const large = animated ? null : await getImage({ src: image, widths: fit([1000, 1600, 2200]), format: 'webp' });
 		return {
-			id: work.id,
+			id: drawing.id,
 			image,
 			title,
-			alt: work.data.alt ?? title,
-			meta: [year, medium, labels.get(category.id)].filter(Boolean).join(' · '),
-			category: category.id,
+			alt,
+			meta: [year, medium, category].filter(Boolean).join(' · '),
+			category: slug(category),
+			label: category,
 			shape,
+			animated,
 			widths: fit(layout[shape].widths),
 			sizes: layout[shape].sizes,
 			tilt: (((i * 37) % 7) - 3) * 0.8,
-			large,
+			href: large?.src ?? image.src,
+			srcset: large?.srcSet.attribute ?? '',
 		};
 	}),
 );
 
 const counts = new Map<string, number>();
-for (const it of items) counts.set(it.category, (counts.get(it.category) ?? 0) + 1);
-const chips = categories.filter((c) => counts.has(c.id));
+const labels = new Map<string, string>();
+for (const it of items) {
+	counts.set(it.category, (counts.get(it.category) ?? 0) + 1);
+	labels.set(it.category, it.label);
+}
+// one chip per category, in order of first appearance; no chips if there's only one
+const chips = counts.size > 1 ? [...labels.entries()].map(([id, label]) => ({ id, label })) : [];
 ---
 
 <section id="gallery" class="gallery wrap" aria-labelledby="gallery-title">
 	<div class="gallery-head">
 		<h2 id="gallery-title" class="scrawl">darwings</h2>
-		<div class="chips" role="group" aria-label="Filter by category" data-filters hidden>
-			<button class="sticker" type="button" data-filter="all" aria-pressed="true">
-				All <span class="count">{items.length}</span>
-			</button>
-			{
-				chips.map((c) => (
-					<button class="sticker" type="button" data-filter={c.id} aria-pressed="false">
-						{c.data.label} <span class="count">{counts.get(c.id)}</span>
+		<p class="ask">
+			<Image class="ask-bubble" src={bubble} alt="" width={300} />
+			<span class="ask-text chunky">wanna check my art?</span>
+			<Image class="ask-arrows" src={arrows} alt="" width={100} />
+		</p>
+		{
+			chips.length > 0 && (
+				<div class="chips" role="group" aria-label="Filter by category" data-filters hidden>
+					<button class="sticker" type="button" data-filter="all" aria-pressed="true">
+						all <span class="count">{items.length}</span>
 					</button>
-				))
-			}
-		</div>
+					{chips.map((c) => (
+						<button class="sticker" type="button" data-filter={c.id} aria-pressed="false">
+							{c.label} <span class="count">{counts.get(c.id)}</span>
+						</button>
+					))}
+				</div>
+			)
+		}
 	</div>
 	<p class="sr-only" aria-live="polite" data-filter-status></p>
 
@@ -80,25 +98,29 @@ const chips = categories.filter((c) => counts.has(c.id));
 					<a
 						class="work paper tape"
 						id={`w-${it.id}`}
-						href={it.large.src}
+						href={it.href}
 						style={`--tilt:${it.tilt}deg;--tape-tilt:${-it.tilt * 2}deg`}
 						data-id={it.id}
 						data-title={it.title}
 						data-meta={it.meta}
 						data-alt={it.alt}
-						data-srcset={it.large.srcSet.attribute}
+						data-srcset={it.srcset}
 						data-w={it.image.width}
 						data-h={it.image.height}
 					>
-						<Picture
-							src={it.image}
-							alt={it.alt}
-							formats={['avif']}
-							fallbackFormat="webp"
-							widths={it.widths}
-							sizes={it.sizes}
-							loading={i < 2 ? 'eager' : 'lazy'}
-						/>
+						{it.animated ? (
+							<img src={it.image.src} alt={it.alt} width={it.image.width} height={it.image.height} loading="lazy" decoding="async" />
+						) : (
+							<Picture
+								src={it.image}
+								alt={it.alt}
+								formats={['avif']}
+								fallbackFormat="webp"
+								widths={it.widths}
+								sizes={it.sizes}
+								loading={i < 2 ? 'eager' : 'lazy'}
+							/>
+						)}
 						<span class="label">
 							<span class="label-title">{it.title}</span>
 							{it.meta && <span class="label-meta">{it.meta}</span>}
@@ -107,16 +129,24 @@ const chips = categories.filter((c) => counts.has(c.id));
 				</li>
 			))
 		}
+		{/* fills the space left at the end of the grid; gallery.ts places it */}
+		<li class="cell filler" data-filler>
+			<div class="missing">
+				<Image class="missing-bubble" src={bubble} alt="" width={420} />
+				<p>
+					<span class="chunky printed">is there one missing?</span>
+					<em class="too-bad">too bad</em>
+					<a class="script" href="/guestbook/">(tell me)</a>
+				</p>
+			</div>
+		</li>
 	</ul>
-
-	<div class="missing">
-		<Image class="missing-bubble" src={bubble} alt="" width={420} />
-		<p>
-			<span class="chunky printed">is there one missing?</span>
-			<em class="too-bad">too bad</em>
-			<a class="script" href="/guestbook/">(tell me)</a>
-		</p>
-	</div>
+	{/* stickers that cover any other holes the packing leaves */}
+	<template data-patches>
+		<Image src={sunflower} alt="" width={160} />
+		<Image src={cat} alt="" width={140} />
+		<Image src={mushroom} alt="" width={150} />
+	</template>
 </section>
 
 <dialog class="lightbox" aria-labelledby="lb-title" data-lightbox>
@@ -149,17 +179,89 @@ const chips = categories.filter((c) => counts.has(c.id));
 
 <style>
 	.gallery {
+		position: relative;
 		container-type: inline-size;
 		scroll-margin-top: 12px;
+	}
+
+	/* a torn sheet of darker paper under the drawings, so they sit on something calm */
+	.gallery::before {
+		content: '';
+		position: absolute;
+		z-index: -1;
+		inset: -40px calc(50% - 50vw) -60px;
+		background: var(--grain), var(--sheet, #d9bb08);
+		background-size: 260px, auto;
+		clip-path: polygon(0 18px, 4% 6px, 9% 16px, 15% 2px, 22% 14px, 30% 4px, 37% 17px, 45% 3px, 52% 15px, 60% 5px, 68% 16px, 75% 2px, 83% 13px, 90% 4px, 96% 15px, 100% 6px, 100% 100%, 0 100%);
+	}
+
+	:root.dark-world .gallery::before {
+		--sheet: #1b1330;
 	}
 
 	.gallery-head {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: end;
-		justify-content: space-between;
+		align-items: center;
 		gap: 14px 24px;
 		margin-bottom: clamp(26px, 4vw, 40px);
+	}
+
+	/* "wanna check my art?" in the speech bubble, its tail and the paper arrows pointing at the drawings */
+	.ask {
+		position: relative;
+		container-type: inline-size;
+		width: clamp(150px, 17vw, 230px);
+		margin: -10px auto -40px 0;
+		color: var(--ink);
+		rotate: -5deg;
+	}
+
+	.ask-bubble {
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 4px 5px rgb(19 6 12 / 0.25));
+	}
+
+	.ask-text {
+		position: absolute;
+		inset: 17% 9% 34% 14%;
+		display: grid;
+		place-items: center;
+		font-size: 9cqi;
+		text-align: center;
+		rotate: -6deg;
+		text-shadow:
+			0.07em 0.07em 0 rgb(19 6 12 / 0.28),
+			-0.03em 0.1em 0 rgb(223 0 29 / 0.25);
+	}
+
+	.ask-arrows {
+		position: absolute;
+		left: -6%;
+		top: 78%;
+		width: 34%;
+		height: auto;
+		rotate: 120deg;
+		filter: drop-shadow(0 2px 3px rgb(19 6 12 / 0.25));
+	}
+
+	.chips {
+		margin-left: auto;
+	}
+
+	@container (max-width: 619px) {
+		.ask {
+			margin: -6px 0 -20px auto;
+		}
+
+		.ask-arrows {
+			display: none;
+		}
+
+		.chips {
+			margin-left: 0;
+		}
 	}
 
 	h2 {
@@ -321,12 +423,32 @@ const chips = categories.filter((c) => counts.has(c.id));
 		}
 	}
 
-	.missing {
-		position: relative;
-		width: min(100%, 420px);
-		margin: clamp(20px, 3vw, 36px) 0 0 auto;
-		rotate: 8deg;
+	.patch {
+		display: grid;
+		place-items: center;
+		pointer-events: none;
+	}
+
+	.patch :global(img) {
+		width: min(70%, 150px);
+		height: auto;
+		rotate: var(--r, -8deg);
+		filter: drop-shadow(0 3px 4px rgb(19 6 12 / 0.3));
+	}
+
+	/* the leftover space at the end of the grid holds the "is there one missing?" bubble */
+	.filler {
+		container-type: size;
+		display: grid;
+		place-items: center;
 		color: var(--ink);
+	}
+
+	.missing {
+		container-type: inline-size;
+		position: relative;
+		width: min(100cqw, 100cqh * 1.37, 440px);
+		rotate: 6deg;
 	}
 
 	.missing-bubble {
@@ -345,7 +467,8 @@ const chips = categories.filter((c) => counts.has(c.id));
 		align-items: baseline;
 		gap: 0 0.5em;
 		margin: 0;
-		font-size: clamp(1rem, 2.2vw, 1.3rem);
+		font-size: clamp(0.8rem, 6.4cqi, 1.3rem);
+		line-height: 1.2;
 		text-align: center;
 	}
 

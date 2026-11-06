@@ -12,10 +12,10 @@ interface Props {
 	noindex?: boolean;
 	bare?: boolean;
 	/** wallpaper texture, see global.css */
-	ground?: 'doodles' | 'wires' | 'sky' | 'sparkle' | 'none';
+	ground?: 'plain' | 'wires' | 'sky' | 'sparkle' | 'none';
 }
 
-const { title, description = SITE_DESCRIPTION, noindex, bare = false, ground = 'doodles' } = Astro.props;
+const { title, description = SITE_DESCRIPTION, noindex, bare = false, ground = 'plain' } = Astro.props;
 const dog = await getImage({ src: hoodieDog, width: 120, densities: [1, 2], format: 'webp' });
 ---
 

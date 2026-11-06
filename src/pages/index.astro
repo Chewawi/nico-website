@@ -1,8 +1,6 @@
 ---
-import { Image } from 'astro:assets';
+import { getImage, Image } from 'astro:assets';
 import pole from '../assets/pole.jpg';
-import arrows from '../assets/stickers/arrows.png';
-import bubble from '../assets/stickers/bubble.png';
 import cat from '../assets/stickers/cat.png';
 import funSign from '../assets/stickers/fun-sign.png';
 import mushroom from '../assets/stickers/mushroom.png';
@@ -15,13 +13,17 @@ import Gallery from '../components/Gallery.astro';
 import Socials from '../components/Socials.astro';
 import { LINKS } from '../consts';
 import Base from '../layouts/Base.astro';
+
+// The straw page used his pole photo as the whole background; here it fades out before the drawings start.
+const backdrop = await getImage({ src: pole, width: 600, format: 'webp' });
 ---
 
 <Base>
-	<div class="band">
-		<section class="hero wrap" aria-labelledby="hello">
-			<Image class="dog" src={yellowDog} alt="" width={200} loading="eager" />
+	<div class="band" style={`--backdrop:url(${backdrop.src})`}>
+		<Image class="dog" src={yellowDog} alt="" width={200} loading="eager" />
+		<Image class="mushroom" src={mushroom} alt="" width={150} />
 
+		<section class="hero wrap" aria-labelledby="hello">
 			<h1 id="hello" class="title">
 				<span class="scrawl hello-word">Hello</span>
 				<span class="script friend">friend</span>
@@ -31,11 +33,18 @@ import Base from '../layouts/Base.astro';
 				<Image class="bio-paper" src={notebook} alt="" width={460} loading="eager" />
 				<p>
 					My name is Nicolas. I'm a self-taught,{' '}
-					<a href={LINKS.uruguay} target="_blank" rel="noopener">uruguayan</a> 'artist'.
+					<a href={LINKS.uruguay} target="_blank" rel="noopener">uruguayan</a> artist.
 				</p>
 				<a class="cutout cat" href={LINKS.uruguay} target="_blank" rel="noopener" aria-label="A yawning orange cat. Opens a clip on YouTube">
 					<Image src={cat} alt="" width={120} />
 				</a>
+			</div>
+
+			<div class="socials-card">
+				<Image class="card-img" src={starCard} alt="" width={362} />
+				<Image class="pin" src={pushpin} alt="" width={48} />
+				<h2 class="card-title chunky">check my socials</h2>
+				<Socials />
 			</div>
 
 			<div class="photo">
@@ -50,21 +59,6 @@ import Base from '../layouts/Base.astro';
 					<Image src={funSign} alt="" width={110} />
 				</a>
 			</div>
-
-			<a class="art-cta" href="#gallery">
-				<Image class="bubble-img" src={bubble} alt="" width={340} />
-				<span class="bubble-text chunky">wanna check my art?</span>
-				<Image class="arrows" src={arrows} alt="" width={120} />
-			</a>
-
-			<div class="socials-card">
-				<Image class="card-img" src={starCard} alt="" width={340} />
-				<Image class="pin" src={pushpin} alt="" width={48} />
-				<h2 class="card-title chunky">check my socials</h2>
-				<Socials />
-			</div>
-
-			<Image class="mushroom" src={mushroom} alt="" width={170} />
 		</section>
 	</div>
 
@@ -72,32 +66,65 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <style>
-	/* lets stickers hang off the screen edge without a sideways scrollbar */
+	/* Full-width strip behind the hero. Stickers can lean on its edges but never past the screen. */
 	.band {
+		position: relative;
+		isolation: isolate;
 		overflow-x: clip;
 	}
 
+	.band::before {
+		content: '';
+		position: absolute;
+		z-index: -1;
+		inset: -140px 0 -60px;
+		background: var(--backdrop) 50% 30% / cover;
+		background-position-y: calc(30% + var(--drift-y, 0px) * 0.4);
+		image-rendering: pixelated;
+		opacity: 0.4;
+		mix-blend-mode: multiply;
+		mask-image: linear-gradient(#000 50%, transparent);
+		pointer-events: none;
+	}
+
+	:root.dark-world .band::before {
+		opacity: 0.25;
+		mix-blend-mode: screen;
+		filter: invert(1);
+	}
+
 	.hero {
-		position: relative;
 		display: grid;
-		grid-template-columns: minmax(0, 0.62fr) minmax(0, 0.48fr) minmax(0, 0.9fr);
+		grid-template-columns: minmax(0, 0.62fr) minmax(0, 0.55fr) minmax(0, 0.9fr);
 		grid-template-areas:
 			'title title photo'
-			'bio cta photo'
-			'bio cta socials';
+			'bio socials photo';
 		align-items: start;
-		gap: 0 clamp(24px, 4vw, 56px);
-		padding-block: clamp(4px, 2vw, 24px) clamp(56px, 8vw, 104px);
+		gap: 0 clamp(20px, 3vw, 48px);
+		padding-block: clamp(4px, 2vw, 24px) clamp(40px, 6vw, 80px);
 	}
 
 	.dog {
 		position: absolute;
-		top: 8px;
-		left: calc(-1 * clamp(70px, 8vw, 130px));
-		width: clamp(110px, 12vw, 170px);
+		z-index: 1;
+		top: 6px;
+		left: 14px;
+		width: clamp(84px, 9vw, 140px);
 		height: auto;
-		rotate: -8deg;
+		rotate: -6deg;
 		filter: drop-shadow(0 3px 3px rgb(19 6 12 / 0.25));
+		pointer-events: none;
+	}
+
+	.mushroom {
+		position: absolute;
+		z-index: -1;
+		left: 22px;
+		bottom: -30px;
+		width: clamp(70px, 8vw, 120px);
+		height: auto;
+		rotate: 14deg;
+		filter: drop-shadow(0 3px 4px rgb(19 6 12 / 0.3));
 		pointer-events: none;
 	}
 
@@ -107,7 +134,7 @@ import Base from '../layouts/Base.astro';
 		flex-wrap: wrap;
 		align-items: baseline;
 		gap: 0 0.3em;
-		margin-left: clamp(40px, 7vw, 120px);
+		margin-left: clamp(60px, 8vw, 130px);
 	}
 
 	.hello-word {
@@ -142,7 +169,7 @@ import Base from '../layouts/Base.astro';
 		inset: 26% 14% auto 25%;
 		margin: 0;
 		color: var(--ink);
-		font-size: clamp(1.1rem, 1.9vw, 1.35rem);
+		font-size: clamp(1.05rem, 1.8vw, 1.3rem);
 		line-height: 1.75;
 	}
 
@@ -151,7 +178,65 @@ import Base from '../layouts/Base.astro';
 		position: absolute;
 		right: -6%;
 		bottom: 6%;
-		width: clamp(64px, 7vw, 96px);
+		width: clamp(60px, 6.5vw, 92px);
+	}
+
+	/* socials pinned to the lined card with the denim stars; sizes follow the card */
+	.socials-card {
+		grid-area: socials;
+		position: relative;
+		container-type: inline-size;
+		align-self: end;
+		width: min(100%, 360px);
+		aspect-ratio: 362 / 256;
+		margin-bottom: 10px;
+		rotate: -3deg;
+	}
+
+	.card-img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		filter: drop-shadow(0 4px 5px rgb(19 6 12 / 0.25));
+	}
+
+	.pin {
+		position: absolute;
+		z-index: 2;
+		top: -7%;
+		left: 50%;
+		width: 9cqi;
+		height: auto;
+		rotate: 14deg;
+		filter: drop-shadow(2px 3px 2px rgb(19 6 12 / 0.35));
+	}
+
+	.card-title {
+		position: absolute;
+		top: 14%;
+		left: 31%;
+		max-width: 46%;
+		margin: 0;
+		font-size: 5.4cqi;
+		line-height: 1.05;
+		color: var(--ink);
+		rotate: -2deg;
+	}
+
+	/* the four icons sit on the cream paper, clear of the stars */
+	.socials-card :global(.socials) {
+		--hit: 12cqi;
+		position: absolute;
+		top: 42%;
+		left: 19%;
+		gap: 1cqi;
+		rotate: -2deg;
+	}
+
+	.socials-card :global(.icon) {
+		width: 8.6cqi;
+		height: 8.6cqi;
 	}
 
 	.photo {
@@ -195,157 +280,63 @@ import Base from '../layouts/Base.astro';
 	.fun-sign {
 		--r: 8deg;
 		position: absolute;
-		right: -30px;
+		right: -24px;
 		top: 30%;
-		width: clamp(70px, 8vw, 104px);
+		width: clamp(56px, 8vw, 104px);
 	}
 
-	.cutout :global(img),
-	.bubble-img {
+	.cutout :global(img) {
 		width: 100%;
 		height: auto;
-	}
-
-	/* "wanna check my art?" in a speech bubble, with paper arrows pointing at the drawings */
-	.art-cta {
-		grid-area: cta;
-		position: relative;
-		justify-self: start;
-		align-self: center;
-		width: clamp(240px, 24vw, 320px);
-		margin: 0 0 0 clamp(-60px, -3vw, -20px);
-		color: var(--ink);
-		text-decoration: none;
-		rotate: -4deg;
-		filter: drop-shadow(0 4px 5px rgb(19 6 12 / 0.25));
-		transition:
-			rotate 0.25s var(--ease),
-			scale 0.25s var(--ease);
-	}
-
-	.art-cta:hover,
-	.art-cta:focus-visible {
-		rotate: 0deg;
-		scale: 1.04;
-	}
-
-	.bubble-text {
-		position: absolute;
-		inset: 18% 10% 34% 16%;
-		display: grid;
-		place-items: center;
-		font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-		text-align: center;
-		rotate: -8deg;
-		/* the straw page stacked two copies of this line, slightly off */
-		text-shadow:
-			0.07em 0.07em 0 rgb(19 6 12 / 0.28),
-			-0.03em 0.1em 0 rgb(223 0 29 / 0.25);
-	}
-
-	.arrows {
-		position: absolute;
-		left: 34%;
-		top: 88%;
-		width: clamp(56px, 5vw, 80px);
-		height: auto;
-		rotate: 100deg;
-		filter: drop-shadow(0 2px 3px rgb(19 6 12 / 0.25));
-		pointer-events: none;
-	}
-
-	/* socials pinned to the lined card with the denim stars */
-	.socials-card {
-		grid-area: socials;
-		position: relative;
-		justify-self: center;
-		width: clamp(260px, 24vw, 310px);
-		aspect-ratio: 375 / 300;
-		margin-top: -36px;
-		rotate: -3deg;
-	}
-
-	.card-img {
-		position: absolute;
-		inset: auto 0 0;
-		width: 100%;
-		height: auto;
-		/* the sticker has a lot of empty space above and below the paper */
-		top: -65%;
-		filter: drop-shadow(0 4px 5px rgb(19 6 12 / 0.25));
-		pointer-events: none;
-	}
-
-	.pin {
-		position: absolute;
-		top: -6%;
-		left: 44%;
-		width: 34px;
-		height: auto;
-		rotate: 14deg;
-		filter: drop-shadow(2px 3px 2px rgb(19 6 12 / 0.35));
-		z-index: 2;
-	}
-
-	.card-title {
-		position: relative;
-		margin: 17% 0 0 24%;
-		font-size: clamp(0.85rem, 1.3vw, 1rem);
-		color: var(--ink);
-		rotate: 2deg;
-	}
-
-	.socials-card :global(.socials) {
-		position: relative;
-		margin: 2% 0 0 21%;
-	}
-
-	.mushroom {
-		position: absolute;
-		left: calc(-1 * clamp(60px, 9vw, 150px));
-		bottom: clamp(-30px, -2vw, 0px);
-		width: clamp(90px, 11vw, 170px);
-		height: auto;
-		rotate: 26deg;
-		filter: drop-shadow(0 3px 4px rgb(19 6 12 / 0.3));
-		pointer-events: none;
-		z-index: -1;
 	}
 
 	/* ---------- phones and narrow tablets ---------- */
 	@media (max-width: 860px) {
 		.hero {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+			grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
 			grid-template-areas:
 				'title title'
 				'bio bio'
-				'cta photo'
 				'socials photo';
-			gap: 0 12px;
+			gap: 0 14px;
 		}
 
 		.dog {
 			left: auto;
-			right: -36px;
-			top: -4px;
-			width: 92px;
-			rotate: 10deg;
+			right: 6px;
+			top: 0;
+			width: 80px;
+			rotate: 8deg;
 			scale: -1 1;
 		}
 
 		.title {
 			margin-left: 0;
+			padding-right: 76px;
+		}
+
+		.friend {
+			translate: 0.3em -0.1em;
 		}
 
 		.bio {
 			justify-self: center;
-			width: min(100%, 320px);
-			margin: -14px 0 -48px;
+			width: min(100%, 330px);
+			margin: -12px 0 0;
+		}
+
+		/* a bit wider than its column so the icons stay finger-sized; it overlaps the photo like a collage */
+		.socials-card {
+			z-index: 1;
+			align-self: center;
+			width: calc(100% + 44px);
+			max-width: none;
+			margin: 0;
 		}
 
 		.photo {
 			width: 100%;
-			margin-top: 20px;
+			margin-top: 8px;
 		}
 
 		.print {
@@ -357,52 +348,25 @@ import Base from '../layouts/Base.astro';
 		}
 
 		.flower {
-			left: -30px;
-			bottom: -26px;
-			width: 74px;
+			left: -26px;
+			bottom: -22px;
+			width: 70px;
 		}
 
-		.flower-back {
+		.flower-back,
+		.mushroom {
 			display: none;
 		}
 
 		.fun-sign {
-			right: -12px;
-			width: 50px;
+			right: -6px;
+			width: 46px;
 		}
+	}
 
-		.art-cta {
-			justify-self: start;
-			width: 100%;
-			max-width: 260px;
-			margin-top: 16px;
-		}
-
-		.arrows {
-			display: none;
-		}
-
-		.socials-card {
-			justify-self: start;
-			width: calc(100% + 24px);
-			max-width: 270px;
-			margin: 22px 0 0 -12px;
-			z-index: 1;
-		}
-
-		.card-title {
-			margin: 18% 0 0 25%;
-			font-size: 0.78rem;
-		}
-
-		.socials-card :global(.socials) {
-			--hit: 36px;
-			gap: 2px;
-			margin: 1% 0 0 21%;
-		}
-
-		.mushroom {
-			display: none;
+	@media (max-width: 400px) {
+		.cat {
+			right: 0;
 		}
 	}
 </style>

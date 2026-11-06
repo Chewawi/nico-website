@@ -24,3 +24,9 @@ pnpm-debug.log*
 .idea/
 .dev.vars
 .wrangler/
+
+# synced drawings repo (see src/lib/drawings.ts)
+.drawings/
+
+# raw green-screen source for the dark fountain (only the processed files in public/decor are kept)
+src/assets/dark.mp4

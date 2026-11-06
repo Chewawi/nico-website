@@ -1,27 +1,22 @@
-import { defineCollection, reference } from 'astro:content';
-import { file } from 'astro/loaders';
+import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
+import { drawingsLoader } from './lib/drawings';
 
-const categories = defineCollection({
-	loader: file('./src/content/categories.yaml'),
-	schema: z.object({
-		label: z.string(),
-		hidden: z.boolean().default(false),
-	}),
-});
-
-const works = defineCollection({
-	loader: file('./src/content/works/works.yaml'),
+// Synced from Nico's drawings repo at build time (see src/lib/drawings.ts).
+const drawings = defineCollection({
+	loader: drawingsLoader(),
 	schema: ({ image }) =>
 		z.object({
 			title: z.string(),
 			image: image(),
-			alt: z.string().optional(),
-			year: z.number().int().optional(),
+			alt: z.string(),
+			category: z.string(),
+			featured: z.boolean(),
+			year: z.union([z.number(), z.string()]).optional(),
 			medium: z.string().optional(),
-			category: reference('categories'),
-			featured: z.boolean().default(false),
+			file: z.string(),
+			order: z.number(),
 		}),
 });
 
-export const collections = { categories, works };
+export const collections = { drawings };

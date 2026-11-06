@@ -1,0 +1,20 @@
+# Rebuilds nico.kodeko.org whenever something changes on main.
+# Goes in the drawings repo as .github/workflows/rebuild-site.yml.
+# Needs one repo secret, SITE_DEPLOY_HOOK: the deploy hook URL from Cloudflare.
+name: Rebuild the site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping the Cloudflare deploy hook
+        run: curl --fail --silent --show-error -X POST "$HOOK"
+        env:
+          HOOK: ${{ secrets.SITE_DEPLOY_HOOK }}

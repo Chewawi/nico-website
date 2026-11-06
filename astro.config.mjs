@@ -27,9 +27,13 @@ const local = (name, cssVariable, fallbacks, variants) => ({
 export default defineConfig({
 	site: 'https://nico.kodeko.org',
 	adapter: localRuntime ? undefined : cloudflare({ imageService: 'compile', prerenderEnvironment: 'node' }),
-	vite: localRuntime
-		? { resolve: { alias: { 'cloudflare:workers': new URL('./src/dev/workers-local.ts', import.meta.url).pathname } } }
-		: {},
+	vite: {
+		...(localRuntime && {
+			resolve: { alias: { 'cloudflare:workers': new URL('./src/dev/workers-local.ts', import.meta.url).pathname } },
+		}),
+		// a local clone of the drawings repo outside this folder (see src/lib/drawings.ts)
+		...(process.env.DRAWINGS_DIR && { server: { fs: { allow: ['.', process.env.DRAWINGS_DIR] } } }),
+	},
 	session: false,
 	integrations: [sitemap({ filter: (page) => !/\/(admin|fun|egg)\/?$/.test(page) })],
 	image: { responsiveStyles: false },

@@ -127,6 +127,7 @@ const sizes = [
 				<span class="chunky printed">the wall</span>
 				<span class="pixel wall-count">{count} {count === 1 ? 'drawing' : 'drawings'}</span>
 			</h2>
+			<p class="graffiti scrawl" aria-hidden="true">gregg rulz ok</p>
 
 			<ol class="entries">
 				{entries.results.map((e, i) => (
@@ -472,6 +473,7 @@ const sizes = [
 	/* ---------- the wall ---------- */
 
 	.wall {
+		position: relative;
 		margin-top: clamp(56px, 8vw, 96px);
 	}
 
@@ -482,6 +484,23 @@ const sizes = [
 		gap: 8px 16px;
 		margin-bottom: clamp(24px, 4vw, 40px);
 		font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+	}
+
+	/* someone from Possum Springs got here first */
+	.graffiti {
+		position: absolute;
+		top: -6px;
+		right: clamp(0px, 4vw, 60px);
+		margin: 0;
+		color: var(--denim);
+		font-size: clamp(0.95rem, 2vw, 1.35rem);
+		rotate: -7deg;
+		opacity: 0.75;
+		pointer-events: none;
+	}
+
+	:root.dark-world .graffiti {
+		color: #8fb4ff;
 	}
 
 	.wall-count {
