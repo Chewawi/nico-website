@@ -1,0 +1,135 @@
+---
+import { Image } from 'astro:assets';
+import exitSign from '../assets/stickers/exit-sign.png';
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Fun" description="You found the fun room." noindex bare>
+	<div class="room" data-room>
+		<h1 class="sr-only">The fun room</h1>
+		<div class="tree-wrap">
+			<img class="tree pixelated" src="/decor/deltarune-tree.gif" width="637" height="358" alt="An animated pixel-art tree with red and magenta leaves, swaying" />
+			<p class="check pixel">* (It's a tree. It sways in a wind you can't feel.)</p>
+		</div>
+
+		<a class="cutout exit" href="/" aria-label="Exit. Way out, back to the art">
+			<Image src={exitSign} alt="" width={150} />
+		</a>
+		<button class="cutout penguin" type="button" data-egg="hello" aria-label="Penguin. Says hello (plays a sound)">
+			<img class="pixelated" src="/decor/penguin.png" alt="" width="36" height="60" />
+		</button>
+
+		<p class="credit">tree from DELTARUNE by Toby Fox · penguin from OneShot</p>
+	</div>
+</Base>
+
+<script>
+	const room = document.querySelector<HTMLElement>('[data-room]')!;
+	room.addEventListener('pointermove', (e) => {
+		room.style.setProperty('--x', `${e.clientX}px`);
+		room.style.setProperty('--y', `${e.clientY}px`);
+	});
+</script>
+
+<style>
+	:global(body) {
+		background: var(--night);
+		color: #f4ecd8;
+	}
+
+	.room {
+		--x: 50vw;
+		--y: 45vh;
+		position: relative;
+		min-height: 100dvh;
+		display: grid;
+		place-items: center;
+		padding: 40px 20px 80px;
+		overflow: hidden;
+	}
+
+	/* candlelight that follows the pointer, as on the old "second" page */
+	.room::before {
+		content: '';
+		position: fixed;
+		inset: 0;
+		background: radial-gradient(380px circle at var(--x) var(--y), rgb(255 170 80 / 0.22), rgb(7 5 12 / 0) 70%);
+		animation: flicker 3.4s steps(6) infinite;
+		pointer-events: none;
+	}
+
+	@keyframes flicker {
+		20% {
+			opacity: 0.8;
+		}
+		45% {
+			opacity: 1;
+		}
+		60% {
+			opacity: 0.85;
+		}
+	}
+
+	.tree-wrap {
+		position: relative;
+		display: grid;
+		justify-items: center;
+		gap: 12px;
+	}
+
+	.tree {
+		width: min(900px, 100%);
+		height: auto;
+	}
+
+	.check {
+		margin: 0;
+		padding: 10px 16px;
+		border: 3px solid #f4ecd8;
+		background: #000;
+		font-size: 0.9rem;
+	}
+
+	.exit {
+		--r: -6deg;
+		position: absolute;
+		left: clamp(12px, 5vw, 60px);
+		bottom: 40px;
+		width: clamp(96px, 12vw, 150px);
+	}
+
+	.exit :global(img) {
+		width: 100%;
+		height: auto;
+	}
+
+	.penguin {
+		--r: -4deg;
+		position: absolute;
+		right: clamp(16px, 8vw, 120px);
+		top: 18%;
+	}
+
+	.penguin.talking {
+		animation: hop 0.5s steps(2) 2;
+	}
+
+	@keyframes hop {
+		50% {
+			translate: 0 -8px;
+		}
+	}
+
+	.credit {
+		position: absolute;
+		right: 16px;
+		bottom: 12px;
+		margin: 0;
+		font-size: 0.78rem;
+		color: #b9ad94;
+	}
+
+	:focus-visible {
+		outline-color: #ffd27a;
+	}
+</style>

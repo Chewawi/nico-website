@@ -1,0 +1,550 @@
+---
+import { env } from 'cloudflare:workers';
+import { CANVAS, db, type Entry, formatDate, LIMITS } from '../lib/guestbook';
+import Base from '../layouts/Base.astro';
+
+export const prerender = false;
+
+const page = Math.max(1, Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10) || 1);
+const offset = (page - 1) * LIMITS.perPage;
+
+const [total, entries] = await Promise.all([
+	db().prepare("SELECT COUNT(*) AS n FROM drawings WHERE status = 'approved'").first<{ n: number }>(),
+	db()
+		.prepare("SELECT id, created_at, name, message FROM drawings WHERE status = 'approved' ORDER BY created_at DESC LIMIT ? OFFSET ?")
+		.bind(LIMITS.perPage, offset)
+		.all<Entry>(),
+]);
+const count = total?.n ?? 0;
+const pages = Math.max(1, Math.ceil(count / LIMITS.perPage));
+const tilts = [-2, 1.5, -1, 2.5, -2.5, 1, 0.5, -1.5];
+
+Astro.response.headers.set('cache-control', 'public, max-age=60');
+
+const colours = [
+	['#13060c', 'Ink'],
+	['#ffffff', 'White'],
+	['#df001d', 'Red'],
+	['#f08c00', 'Orange'],
+	['#e8ca0c', 'Mustard'],
+	['#2f9e44', 'Green'],
+	['#4dabf7', 'Sky'],
+	['#1f4fa8', 'Denim'],
+	['#7b2d8e', 'Purple'],
+	['#f783ac', 'Pink'],
+	['#8b5a2b', 'Brown'],
+];
+const sizes = [
+	[3, 'Thin'],
+	[8, 'Medium'],
+	[18, 'Thick'],
+] as const;
+---
+
+<Base title="Guestbook" description="Sign mrnico12's guestbook by drawing something.">
+	<div class="gb wrap">
+		<header class="gb-head">
+			<h1>
+				<span class="scrawl">Guestbook</span>
+				<span class="script">sign it!</span>
+			</h1>
+			<p class="lede">
+				Draw me something and leave your name if you want. Drawings show up on the wall once I've seen them.
+				<span class="new pixel blink">new!</span>
+			</p>
+		</header>
+
+		<form class="sketchbook paper tape" data-sign hidden>
+			<div class="tools">
+				<fieldset class="swatches">
+					<legend>Colour</legend>
+					{
+						colours.map(([hex, name], i) => (
+							<label class="swatch" style={`--c:${hex}`}>
+								<input type="radio" name="colour" value={hex} checked={i === 0} />
+								<span class="sr-only">{name}</span>
+							</label>
+						))
+					}
+					<label class="swatch any" title="Any colour">
+						<input type="color" value="#4f8fdc" data-any-colour />
+						<span class="sr-only">Pick any colour</span>
+					</label>
+				</fieldset>
+
+				<fieldset class="sizes">
+					<legend>Brush</legend>
+					{
+						sizes.map(([px, name], i) => (
+							<label class="size">
+								<input type="radio" name="size" value={px} checked={i === 1} />
+								<span class="dot" style={`--d:${Math.min(px, 14) + 4}px`} />
+								<span class="sr-only">{name}</span>
+							</label>
+						))
+					}
+					<label class="tool">
+						<input type="checkbox" name="eraser" data-eraser />
+						<span>Eraser</span>
+					</label>
+				</fieldset>
+
+				<div class="actions">
+					<button class="tool-btn" type="button" data-undo disabled>Undo</button>
+					<button class="tool-btn" type="button" data-clear disabled>Clear</button>
+					<button class="tool-btn" type="button" data-save disabled>Save it</button>
+				</div>
+			</div>
+
+			<canvas
+				width={CANVAS.width}
+				height={CANVAS.height}
+				data-canvas
+				aria-label="Drawing canvas. Draw with a mouse, finger or pen."></canvas>
+
+			<div class="fields">
+				<label class="field">
+					<span>Your name <small>(optional)</small></span>
+					<input name="name" maxlength={LIMITS.name} autocomplete="nickname" />
+				</label>
+				<label class="field">
+					<span>A message <small>(optional)</small></span>
+					<textarea name="message" maxlength={LIMITS.message} rows="2"></textarea>
+				</label>
+				<label class="hp" aria-hidden="true">
+					Website <input name="website" tabindex="-1" autocomplete="off" />
+				</label>
+			</div>
+
+			<div class="send-row">
+				<div class="turnstile" data-turnstile data-sitekey={env.TURNSTILE_SITE_KEY}></div>
+				<button class="sticker big send" type="submit" data-send disabled>Send it</button>
+			</div>
+			<p class="form-status" role="status" data-status></p>
+		</form>
+		<noscript><p class="paper nojs">The drawing pad needs JavaScript. The wall still works below!</p></noscript>
+
+		<section class="wall" aria-labelledby="wall-title">
+			<h2 id="wall-title">
+				<span class="chunky printed">The wall</span>
+				<span class="pixel wall-count">{count} {count === 1 ? 'drawing' : 'drawings'}</span>
+			</h2>
+
+			{
+				entries.results.length === 0 ? (
+					<p class="empty">Nothing here yet. Be the first one!</p>
+				) : (
+					<ol class="entries">
+						{entries.results.map((e, i) => (
+							<li class="entry" style={`--tilt:${tilts[i % tilts.length]}deg`}>
+								<figure class="polaroid paper tape">
+									<img
+										src={`/api/drawing/${e.id}`}
+										width={CANVAS.width}
+										height={CANVAS.height}
+										loading={i < 4 ? 'eager' : 'lazy'}
+										decoding="async"
+										alt={`Drawing by ${e.name || 'anonymous'}`}
+									/>
+									<figcaption>
+										<span class="who">{e.name || 'anonymous'}</span>
+										<span class="when pixel">
+											#{count - offset - i} · {formatDate(e.created_at)}
+										</span>
+										{e.message && <span class="msg">{e.message}</span>}
+									</figcaption>
+								</figure>
+							</li>
+						))}
+					</ol>
+				)
+			}
+
+			{
+				pages > 1 && (
+					<nav class="pager" aria-label="Wall pages">
+						{page > 1 && (
+							<a class="sticker" href={page === 2 ? '/guestbook/' : `/guestbook/?page=${page - 1}`}>
+								« Newer
+							</a>
+						)}
+						<span class="pixel">
+							page {page} of {pages}
+						</span>
+						{page < pages && (
+							<a class="sticker" href={`/guestbook/?page=${page + 1}`}>
+								Older »
+							</a>
+						)}
+					</nav>
+				)
+			}
+		</section>
+	</div>
+</Base>
+
+<script>
+	import '../scripts/draw';
+</script>
+
+<style>
+	.gb-head {
+		margin-bottom: clamp(28px, 4vw, 44px);
+	}
+
+	h1 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0 0.35em;
+	}
+
+	h1 .scrawl {
+		font-size: clamp(2.6rem, 7vw, 4.6rem);
+		rotate: -2deg;
+	}
+
+	h1 .script {
+		font-size: clamp(2rem, 4vw, 3rem);
+	}
+
+	.lede {
+		max-width: 52ch;
+		margin-top: 14px;
+		font-size: 1.15rem;
+	}
+
+	.new {
+		display: inline-block;
+		margin-left: 0.4em;
+		padding: 1px 6px;
+		background: var(--red);
+		color: #fff;
+		font-size: 0.75rem;
+		rotate: 6deg;
+	}
+
+	/* ---------- drawing pad ---------- */
+
+	.sketchbook {
+		display: grid;
+		grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+		grid-template-areas:
+			'tools tools'
+			'canvas fields'
+			'canvas send'
+			'status status';
+		gap: 16px 28px;
+		max-width: 980px;
+		padding: clamp(16px, 3vw, 28px);
+		rotate: -0.6deg;
+	}
+
+	.sketchbook[hidden] {
+		display: none;
+	}
+
+	.tools {
+		grid-area: tools;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 12px 24px;
+	}
+
+	fieldset {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+
+	legend {
+		float: left;
+		margin-right: 6px;
+		font-family: var(--font-pixel);
+		font-size: 0.75rem;
+	}
+
+	.swatch,
+	.size {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+	}
+
+	.swatch {
+		border: 2px solid var(--ink);
+		border-radius: 50%;
+		background: var(--c);
+	}
+
+	.swatch input,
+	.size input {
+		position: absolute;
+		inset: 0;
+		margin: 0;
+		opacity: 0;
+	}
+
+	.swatch:has(:checked) {
+		box-shadow:
+			0 0 0 2px var(--paper),
+			0 0 0 4px var(--ink);
+	}
+
+	.swatch:has(:focus-visible),
+	.size:has(:focus-visible),
+	.tool:has(:focus-visible) {
+		outline: 3px solid var(--red);
+		outline-offset: 3px;
+	}
+
+	.any {
+		background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+	}
+
+	.any input {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+	}
+
+	.size {
+		border-radius: 6px;
+	}
+
+	.size:has(:checked) {
+		background: rgb(19 6 12 / 0.12);
+	}
+
+	.dot {
+		width: var(--d);
+		height: var(--d);
+		border-radius: 50%;
+		background: var(--ink);
+	}
+
+	.tool {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-left: 6px;
+		padding: 3px 10px;
+		border: 2px solid var(--ink);
+		border-radius: 999px;
+		font-weight: 700;
+		font-size: 0.9rem;
+	}
+
+	.tool:has(:checked) {
+		background: var(--ink);
+		color: var(--paper);
+	}
+
+	.tool input {
+		accent-color: var(--red);
+	}
+
+	.actions {
+		display: flex;
+		gap: 8px;
+		margin-left: auto;
+	}
+
+	.tool-btn {
+		padding: 5px 12px;
+		border: 2px solid var(--ink);
+		border-radius: 6px;
+		background: var(--paper);
+		font-weight: 700;
+		font-size: 0.9rem;
+	}
+
+	.tool-btn:hover:not(:disabled) {
+		background: var(--mustard);
+	}
+
+	.tool-btn:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+
+	canvas {
+		grid-area: canvas;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 4 / 3;
+		border: 2px solid var(--ink);
+		background: #fff;
+		touch-action: none;
+		cursor: crosshair;
+	}
+
+	.fields {
+		grid-area: fields;
+		display: grid;
+		align-content: start;
+		gap: 14px;
+	}
+
+	.field {
+		display: grid;
+		gap: 4px;
+		font-weight: 700;
+	}
+
+	.field small {
+		font-weight: 400;
+		opacity: 0.75;
+	}
+
+	.field input,
+	.field textarea {
+		width: 100%;
+		padding: 8px 10px;
+		border: 2px solid var(--ink);
+		border-radius: 4px;
+		background: #fff;
+		font-weight: 400;
+	}
+
+	.field textarea {
+		resize: vertical;
+	}
+
+	.hp {
+		position: absolute;
+		left: -9999px;
+	}
+
+	.send-row {
+		grid-area: send;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		justify-content: space-between;
+		align-self: end;
+		gap: 12px;
+	}
+
+	.send:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		box-shadow: 2px 2px 0 var(--ink);
+		translate: 0;
+	}
+
+	.form-status {
+		grid-area: status;
+		margin: 0;
+		min-height: 1.5em;
+		font-weight: 700;
+	}
+
+	.form-status.error {
+		color: var(--red-deep);
+	}
+
+	.nojs {
+		padding: 16px;
+	}
+
+	@media (max-width: 760px) {
+		.sketchbook {
+			grid-template-columns: 1fr;
+			grid-template-areas: 'tools' 'canvas' 'fields' 'send' 'status';
+			rotate: 0deg;
+		}
+
+		.actions {
+			margin-left: 0;
+		}
+	}
+
+	/* ---------- the wall ---------- */
+
+	.wall {
+		margin-top: clamp(56px, 8vw, 96px);
+	}
+
+	.wall h2 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 8px 16px;
+		margin-bottom: clamp(24px, 4vw, 40px);
+		font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+	}
+
+	.wall-count {
+		font-size: 0.85rem;
+	}
+
+	.entries {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+		gap: clamp(28px, 4vw, 44px) clamp(18px, 3vw, 32px);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.polaroid {
+		margin: 0;
+		padding: 10px 10px 14px;
+		rotate: var(--tilt);
+		transition: rotate 0.3s var(--ease);
+	}
+
+	.polaroid:hover {
+		rotate: 0deg;
+	}
+
+	.polaroid img {
+		width: 100%;
+		height: auto;
+		border: 1px solid rgb(19 6 12 / 0.15);
+	}
+
+	figcaption {
+		display: grid;
+		gap: 2px;
+		margin-top: 10px;
+	}
+
+	.who {
+		font-weight: 700;
+		overflow-wrap: anywhere;
+	}
+
+	.when {
+		font-size: 0.7rem;
+		opacity: 0.8;
+	}
+
+	.msg {
+		margin-top: 4px;
+		font-style: italic;
+		overflow-wrap: anywhere;
+	}
+
+	.empty {
+		font-size: 1.15rem;
+	}
+
+	.pager {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 18px;
+		margin-top: clamp(36px, 5vw, 56px);
+	}
+</style>

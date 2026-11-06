@@ -1,0 +1,112 @@
+---
+import { CANVAS, db, type Entry, formatDate, isAdmin, unauthorized } from '../lib/guestbook';
+import Base from '../layouts/Base.astro';
+
+export const prerender = false;
+
+if (!isAdmin(Astro.request)) return unauthorized();
+Astro.response.headers.set('cache-control', 'private, no-store');
+
+const [pending, approved] = await Promise.all([
+	db().prepare("SELECT id, created_at, name, message FROM drawings WHERE status = 'pending' ORDER BY created_at ASC LIMIT 100").all<Entry>(),
+	db().prepare("SELECT id, created_at, name, message FROM drawings WHERE status = 'approved' ORDER BY created_at DESC LIMIT 60").all<Entry>(),
+]);
+
+const groups = [
+	{ title: 'Waiting for you', empty: 'Nothing new. All caught up!', rows: pending.results, approve: true },
+	{ title: 'On the wall (newest 60)', empty: 'Nothing on the wall yet.', rows: approved.results, approve: false },
+];
+---
+
+<Base title="Guestbook admin" description="Moderate guestbook drawings." noindex>
+	<div class="admin wrap">
+		<h1 class="chunky printed">Guestbook admin</h1>
+		<p>Approve a drawing to put it on the wall. Delete removes it for good.</p>
+
+		{
+			groups.map((g) => (
+				<section>
+					<h2 class="chunky">
+						{g.title} <span class="pixel">({g.rows.length})</span>
+					</h2>
+					{g.rows.length === 0 ? (
+						<p>{g.empty}</p>
+					) : (
+						<ul class="grid">
+							{g.rows.map((e) => (
+								<li class="card paper">
+									<img src={`/api/drawing/${e.id}`} width={CANVAS.width} height={CANVAS.height} loading="lazy" alt={`Drawing by ${e.name || 'anonymous'}`} />
+									<p class="who">
+										<strong>{e.name || 'anonymous'}</strong> · {formatDate(e.created_at)}
+									</p>
+									{e.message && <p class="msg">{e.message}</p>}
+									<form method="post" action="/api/admin">
+										<input type="hidden" name="id" value={e.id} />
+										{g.approve ? (
+											<button class="sticker" name="action" value="approve">Approve</button>
+										) : (
+											<button class="sticker" name="action" value="hide">Take down</button>
+										)}
+										<button class="sticker danger" name="action" value="delete">Delete</button>
+									</form>
+								</li>
+							))}
+						</ul>
+					)}
+				</section>
+			))
+		}
+	</div>
+</Base>
+
+<style>
+	.admin {
+		display: grid;
+		gap: 20px;
+	}
+
+	h1 {
+		font-size: clamp(1.8rem, 4vw, 2.6rem);
+	}
+
+	h2 {
+		margin: 24px 0 16px;
+		font-size: 1.3rem;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+		gap: 20px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.card {
+		padding: 12px;
+	}
+
+	.card img {
+		width: 100%;
+		height: auto;
+		border: 1px solid rgb(19 6 12 / 0.2);
+	}
+
+	.who,
+	.msg {
+		margin: 8px 0 0;
+		overflow-wrap: anywhere;
+	}
+
+	form {
+		display: flex;
+		gap: 10px;
+		margin-top: 12px;
+	}
+
+	.danger {
+		background: var(--ink);
+		color: var(--paper);
+	}
+</style>
