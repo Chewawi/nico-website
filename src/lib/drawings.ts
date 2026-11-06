@@ -1,36 +1,28 @@
-// Content loader for Nico's drawings. They live in their own GitHub repo, which is the source of truth:
-// every build (and every `astro dev` start) syncs it into .drawings/ and lists what's there.
-// The repo can hold an optional drawings.yaml with per-drawing info; see docs/drawings-repo/drawings.yaml.
+// Content loader for Nico's drawings. They live in his own GitHub repo, which is the source of truth: every build
+// (and every `astro dev` start) syncs it into .drawings/ and lists what's there. The layout is explained in that repo's
+// README: one folder per category, and next to any drawing an optional "<same name>.txt" with its title, alt text,
+// featured and hidden. Everything is optional; a mistake in a .txt only logs a warning.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Loader } from 'astro/loaders';
-import { parse } from 'yaml';
 
 const REPO = process.env.DRAWINGS_REPO ?? 'MrDino127/drawings';
 const BRANCH = process.env.DRAWINGS_BRANCH ?? 'main';
 const IMAGE = /\.(png|jpe?g|webp|gif|avif)$/i;
-const DEFAULT_CATEGORY = 'drawings';
+// pictures that aren't in any folder
+const LOOSE = 'drawings';
 
-type Info = {
-	title?: string;
-	category?: string;
-	featured?: boolean;
-	alt?: string;
-	year?: number | string;
-	medium?: string;
-	hidden?: boolean;
-};
-
-type Meta = { drawings?: Record<string, Info | null>; 'hide categories'?: string[] };
+type Logger = { info(m: string): void; warn(m: string): void };
+type Info = { title?: string; alt?: string; featured?: boolean; hidden?: boolean };
 
 /** Clone or update the drawings repo. DRAWINGS_DIR points at a local clone instead (no network). */
-function sync(logger: { info(m: string): void; warn(m: string): void }): { dir: string; git: boolean } {
+function sync(logger: Logger): string {
 	if (process.env.DRAWINGS_DIR) {
 		const dir = path.resolve(process.env.DRAWINGS_DIR);
 		logger.info(`Using the drawings in ${dir}`);
-		return { dir, git: existsSync(path.join(dir, '.git')) };
+		return dir;
 	}
 
 	const dir = path.resolve('.drawings');
@@ -60,33 +52,69 @@ function sync(logger: { info(m: string): void; warn(m: string): void }): { dir: 
 		}
 		logger.warn(`Couldn't update the drawings, using the last copy in .drawings/ (${safe.split('\n')[0]})`);
 	}
-	return { dir, git: true };
+	return dir;
 }
 
-function listImages(dir: string, base = ''): string[] {
+/** Every file in the repo, as posix paths. Names starting with "." or "_" (files or folders) stay out of the site. */
+function listFiles(dir: string, base = ''): string[] {
 	return readdirSync(path.join(dir, base), { withFileTypes: true }).flatMap((entry) => {
-		// files and folders starting with "." or "_" stay out of the site
 		if (entry.name.startsWith('.') || entry.name.startsWith('_')) return [];
 		const rel = path.posix.join(base, entry.name);
-		if (entry.isDirectory()) return listImages(dir, rel);
-		return IMAGE.test(entry.name) && !/do not repost/i.test(entry.name) ? [rel] : [];
+		return entry.isDirectory() ? listFiles(dir, rel) : [rel];
 	});
 }
 
-/** Last commit time per file, so new drawings that aren't in drawings.yaml show up first. */
-function commitTimes(dir: string): Map<string, number> {
-	const times = new Map<string, number>();
+/**
+ * When each file was first added, following moves and renames, so new drawings go first and sorting them into
+ * folders doesn't reorder anything. Exact renames are matched by content id, so the blob-less clone needs no
+ * downloads for this. Outside a git checkout everything ties and the order is alphabetical.
+ */
+function addedTimes(dir: string): Map<string, number> {
+	const added = new Map<string, number>();
+	let log: string;
 	try {
-		const log = execFileSync('git', ['log', '--format=@%ct', '--name-only', '--no-renames'], { cwd: dir, encoding: 'utf8', maxBuffer: 32e6 });
-		let time = 0;
-		for (const line of log.split('\n')) {
-			if (line.startsWith('@')) time = Number(line.slice(1));
-			else if (line && !times.has(line)) times.set(line, time);
-		}
+		log = execFileSync('git', ['log', '-z', '--reverse', '--format=@%ct', '--name-status', '--find-renames=100%'], {
+			cwd: dir,
+			encoding: 'utf8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+			maxBuffer: 64e6,
+		});
 	} catch {
-		// not a git checkout: fall back to alphabetical
+		return added;
 	}
-	return times;
+	// Tokens are NUL-separated: "@<time>" per commit, then a status (A, M, D, R100...) and its one or two paths.
+	const tokens = log.split('\0');
+	let time = 0;
+	for (let i = 0; i < tokens.length; i++) {
+		const token = tokens[i].replace(/^\n/, '');
+		if (token.startsWith('@')) time = Number(token.slice(1));
+		else if (token === 'A') added.set(tokens[++i], time);
+		else if (token.startsWith('R')) {
+			const from = tokens[++i];
+			added.set(tokens[++i], added.get(from) ?? time);
+		} else if (token) i++; // M, D, T: one path, nothing to record
+	}
+	return added;
+}
+
+const YES = /^(yes|y|true|si|sí|1)$/i;
+const NO = /^(no|n|false|0)$/i;
+
+/** Reads "key: value" lines. A bare "featured" or "hidden" line means yes. */
+function readInfo(dir: string, file: string, logger: Logger): Info {
+	const info: Info = {};
+	const lines = readFileSync(path.join(dir, file), 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/);
+	lines.forEach((raw, n) => {
+		const line = raw.trim();
+		if (!line || line.startsWith('#')) return;
+		const [, key = line, value = ''] = line.match(/^([a-z]+)\s*[:=]\s*(.*)$/i) ?? [];
+		const k = key.toLowerCase();
+		if (k === 'title' || k === 'alt') {
+			if (value.trim()) info[k] = value.trim();
+		} else if ((k === 'featured' || k === 'hidden') && (!value || YES.test(value) || NO.test(value))) info[k] = !NO.test(value);
+		else logger.warn(`${file}, line ${n + 1}: didn't understand "${line}"`);
+	});
+	return info;
 }
 
 /** "Faro PNG.png" -> "Faro", "spikey_dangley.png" -> "spikey dangley" */
@@ -95,21 +123,11 @@ function titleFrom(file: string) {
 	return name.replace(/[_-]+/g, ' ').replace(/\b(png|jpe?g|final)\b/gi, '').replace(/\s+/g, ' ').trim() || name;
 }
 
-/** Folder name if it's in one, otherwise a guess from the name, otherwise "drawings". */
-function categoryFrom(file: string) {
-	const folder = path.posix.dirname(file);
-	if (folder !== '.') return folder.split('/')[0].replace(/[_-]+/g, ' ');
-	if (/sheet/i.test(file)) return 'sheets';
-	if (/logo|tipo/i.test(file)) return 'logos';
-	return DEFAULT_CATEGORY;
-}
-
-const slug = (text: string) =>
+export const slug = (text: string) =>
 	text
 		.normalize('NFKD')
-		.replace(/[̀-ͯ]/g, '')
+		.replace(/[\u0300-\u036f]/g, '')
 		.toLowerCase()
-		.replace(/\.[^.]+$/, '')
 		.replace(/[^a-z0-9]+/g, '-')
 		.replace(/^-|-$/g, '') || 'drawing';
 
@@ -117,74 +135,63 @@ export function drawingsLoader(): Loader {
 	return {
 		name: 'drawings',
 		async load({ store, parseData, logger, config, watcher }) {
-			const { dir, git } = sync(logger);
+			const dir = sync(logger);
 			const root = fileURLToPath(config.root);
 
 			const read = async () => {
-				const metaFile = ['drawings.yaml', 'drawings.yml'].map((f) => path.join(dir, f)).find(existsSync);
-				let meta: Meta = {};
-				if (metaFile) {
-					try {
-						meta = (parse(readFileSync(metaFile, 'utf8')) as Meta) ?? {};
-					} catch (error) {
-						// fail the build so the live site keeps the last good version
-						throw new Error(`drawings.yaml has a mistake in it: ${(error as Error).message}`);
-					}
-				}
-				const info = meta.drawings ?? {};
-				const hiddenCategories = new Set((meta['hide categories'] ?? []).map((c) => String(c).toLowerCase()));
+				const files = listFiles(dir);
+				// sidecars match their drawing case-insensitively, so "faro png.txt" still finds "Faro PNG.png"
+				const texts = new Map(files.filter((f) => /\.txt$/i.test(f)).map((f) => [f.slice(0, -4).toLowerCase(), f]));
+				const added = addedTimes(dir);
 
-				const files = listImages(dir);
-				const present = new Set(files);
-				for (const name of Object.keys(info)) {
-					if (!present.has(name) && !/do not repost/i.test(name)) logger.warn(`drawings.yaml mentions "${name}", but there's no such file`);
-				}
+				const matched = new Set<string>();
+				const drawings = files
+					.filter((f) => IMAGE.test(f) && !/do not repost/i.test(f))
+					.map((file) => {
+						const text = texts.get(file.replace(/\.[^.]+$/, '').toLowerCase());
+						if (text) matched.add(text);
+						const info = text ? readInfo(dir, text, logger) : {};
+						const folder = file.includes('/') ? file.slice(0, file.indexOf('/')) : LOOSE;
+						const title = info.title ?? titleFrom(file);
+						return { file, info, title, category: folder.replace(/[_-]+/g, ' ').trim().toLowerCase(), added: added.get(file) ?? 0 };
+					})
+					.filter((d) => !d.info.hidden)
+					.sort((a, b) => b.added - a.added || a.title.localeCompare(b.title));
 
-				// listed drawings first, in file order; the rest newest first
-				const listed = Object.keys(info).filter((name) => present.has(name));
-				const times = git ? commitTimes(dir) : new Map<string, number>();
-				const rest = files
-					.filter((f) => !(f in info))
-					.sort((a, b) => (times.get(b) ?? 0) - (times.get(a) ?? 0) || a.localeCompare(b));
+				for (const orphan of texts.values()) {
+					if (!matched.has(orphan) && !/(^|\/)readme\.txt$/i.test(orphan)) logger.warn(`${orphan} has no drawing with the same name next to it`);
+				}
 
 				store.clear();
 				const used = new Set<string>();
-				let order = 0;
-				for (const file of [...listed, ...rest]) {
-					const given = info[file] ?? {};
-					if (given.hidden) continue;
-					const category = (given.category ?? categoryFrom(file)).toString().trim().toLowerCase();
-					if (hiddenCategories.has(category)) continue;
-
-					let id = slug(file);
-					for (let n = 2; used.has(id); n++) id = `${slug(file)}-${n}`;
+				for (const [order, d] of drawings.entries()) {
+					// from the name only, so links to a drawing survive moving it to another folder
+					const base = slug(path.posix.basename(d.file).replace(/\.[^.]+$/, ''));
+					let id = base;
+					for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
 					used.add(id);
 
-					const title = given.title?.toString() ?? titleFrom(file);
+					const filePath = path.join(dir, d.file);
 					const data = await parseData({
 						id,
 						data: {
-							title,
-							image: `./${file}`,
-							alt: given.alt ?? title,
-							category,
-							featured: given.featured ?? false,
-							year: given.year,
-							medium: given.medium,
-							file,
-							order: order++,
+							title: d.title,
+							image: `./${path.posix.basename(d.file)}`, // resolved next to filePath
+							alt: d.info.alt ?? d.title,
+							category: d.category,
+							featured: d.info.featured ?? false,
+							order,
 						},
-						// image paths resolve relative to this file, i.e. the repo root
-						filePath: path.join(dir, 'drawings.yaml'),
+						filePath,
 					});
-					store.set({ id, data, filePath: path.relative(root, path.join(dir, 'drawings.yaml')).split(path.sep).join('/') });
+					store.set({ id, data, filePath: path.relative(root, filePath).split(path.sep).join('/') });
 				}
-				logger.info(`${order} drawings (${files.length - order} hidden)`);
+				logger.info(`${drawings.length} drawings`);
 			};
 
 			await read();
 
-			// In dev, editing the drawings folder (or drawings.yaml) updates the gallery without a restart.
+			// In dev, editing the drawings folder (pictures or .txt files) updates the gallery without a restart.
 			if (watcher) {
 				let timer: ReturnType<typeof setTimeout> | undefined;
 				watcher.add(dir);

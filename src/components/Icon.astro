@@ -42,19 +42,18 @@ const paths = {
 	],
 } as const;
 
-export type IconName = keyof typeof paths;
+type IconName = keyof typeof paths;
 
 interface Props {
 	name: IconName;
 	size?: number;
-	class?: string;
 }
 
-const { name, size = 28, class: className } = Astro.props;
+const { name, size = 28 } = Astro.props;
 ---
 
 <svg
-	class:list={['icon', className]}
+	class="icon"
 	viewBox="0 0 32 32"
 	width={size}
 	height={size}

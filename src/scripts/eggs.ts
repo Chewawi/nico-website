@@ -38,17 +38,13 @@ export function blip(notes: number[], step = 0.08) {
 	});
 }
 
-function playHello() {
-	new Audio('/sounds/hello.ogg').play().catch(() => {});
-}
-
 const viewedJokes = ['best viewed with your eyes', 'best viewed in 800×600', 'best viewed at 3am'];
 let viewed = 0;
 let counterClicks = 0;
 
 const eggs: Record<string, (el: HTMLElement) => void> = {
 	hello(el) {
-		playHello();
+		new Audio('/sounds/hello.ogg').play().catch(() => {});
 		say('* Hello.', 2500);
 		el.classList.remove('talking');
 		void el.offsetWidth;
@@ -80,6 +76,19 @@ const eggs: Record<string, (el: HTMLElement) => void> = {
 	},
 	niko() {
 		say('* (Niko is thinking about pancakes.)', 3000);
+	},
+	// waking the slugcat up after the rain: karma goes up, like after a hibernation in Rain World
+	slugcat(el) {
+		blip([392, 587, 784, 1175], 0.13);
+		const karma = new Image(67, 67);
+		karma.src = '/decor/karma.png';
+		karma.alt = '';
+		karma.className = 'karma';
+		karma.style.left = `${parseFloat(el.style.left) - 4}px`;
+		karma.style.top = `${parseFloat(el.style.top) - 14}px`;
+		document.body.append(karma);
+		el.remove();
+		setTimeout(() => karma.remove(), 2400);
 	},
 };
 
@@ -145,6 +154,7 @@ const words: Record<string, () => void> = {
 	omori: () => say('* Waiting for something to happen?'),
 	nico: walkDog,
 	wawi: hearts, // also catches "chewawi"
+	rain: () => shelter(true),
 };
 
 // ---------- Konami code: Deltarune's dark world ----------
@@ -261,29 +271,64 @@ if (counter) {
 const trinket = document.querySelector<HTMLElement>('[data-trinket]');
 if (trinket && localStorage.getItem('egg')) trinket.hidden = false;
 
-// ---------- a ladybug, sometimes ----------
+// ---------- visitors that sit on the top edge of a paper, sticker or cut-out ----------
 
-if (Math.random() < 0.08) {
-	const spots = [...document.querySelectorAll<HTMLElement>('main .paper, main .sticker, main .cutout')].filter((el) => el.offsetWidth > 60);
-	const spot = spots[Math.floor(Math.random() * spots.length)];
-	if (spot) {
-		const bug = document.createElement('button');
-		bug.type = 'button';
-		bug.className = 'ladybug';
-		bug.dataset.egg = 'bug';
-		bug.setAttribute('aria-label', 'A ladybug');
-		bug.innerHTML = `<svg viewBox="0 0 24 20" width="22" height="18" aria-hidden="true"><path d="M6 6 2 2M18 6l4-4M5 12H1M19 12h4M6 17l-3 3M18 17l3 3" stroke="#13060c" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="12" cy="12" rx="8" ry="7.5" fill="#df001d" stroke="#13060c" stroke-width="1.6"/><path d="M12 4.5v15" stroke="#13060c" stroke-width="1.4"/><circle cx="12" cy="5" r="3.4" fill="#13060c"/><circle cx="8.3" cy="11" r="1.5" fill="#13060c"/><circle cx="15.7" cy="11" r="1.5" fill="#13060c"/><circle cx="9" cy="15.5" r="1.2" fill="#13060c"/><circle cx="15" cy="15.5" r="1.2" fill="#13060c"/></svg>`;
-		const along = 0.15 + Math.random() * 0.7;
-		const place = () => {
-			const r = spot.getBoundingClientRect();
-			bug.style.left = `${r.left + scrollX + r.width * along - 11}px`;
-			bug.style.top = `${r.top + scrollY - 9}px`;
-		};
-		document.body.append(bug);
-		place();
-		addEventListener('resize', place);
-	}
+/** Puts a button on top of a random spot (one on screen, if there is one and `onScreen` is set) and keeps it there. */
+function perch(el: HTMLElement, width: number, sink: number, onScreen = false) {
+	const spots = [...document.querySelectorAll<HTMLElement>('main .paper, main .sticker, main .cutout')].filter((s) => s.offsetWidth > 60);
+	const seen = spots.filter((s) => {
+		const r = s.getBoundingClientRect();
+		return r.top > 70 && r.top < innerHeight - 30;
+	});
+	const pool = onScreen && seen.length ? seen : spots;
+	const spot = pool[Math.floor(Math.random() * pool.length)];
+	if (!spot) return;
+	const along = 0.15 + Math.random() * 0.7;
+	const place = () => {
+		if (!el.isConnected) return removeEventListener('resize', place);
+		const r = spot.getBoundingClientRect();
+		el.style.left = `${r.left + scrollX + r.width * along - width / 2}px`;
+		el.style.top = `${r.top + scrollY - sink}px`;
+	};
+	document.body.append(el);
+	place();
+	addEventListener('resize', place);
 }
+
+function visitor(className: string, egg: string, label: string, html: string) {
+	const el = document.createElement('button');
+	el.type = 'button';
+	el.className = className;
+	el.dataset.egg = egg;
+	el.setAttribute('aria-label', label);
+	el.innerHTML = html;
+	return el;
+}
+
+// a ladybug, sometimes
+if (Math.random() < 0.08) {
+	const bug = visitor(
+		'ladybug',
+		'bug',
+		'A ladybug',
+		`<svg viewBox="0 0 24 20" width="22" height="18" aria-hidden="true"><path d="M6 6 2 2M18 6l4-4M5 12H1M19 12h4M6 17l-3 3M18 17l3 3" stroke="#13060c" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="12" cy="12" rx="8" ry="7.5" fill="#df001d" stroke="#13060c" stroke-width="1.6"/><path d="M12 4.5v15" stroke="#13060c" stroke-width="1.4"/><circle cx="12" cy="5" r="3.4" fill="#13060c"/><circle cx="8.3" cy="11" r="1.5" fill="#13060c"/><circle cx="15.7" cy="11" r="1.5" fill="#13060c"/><circle cx="9" cy="15.5" r="1.2" fill="#13060c"/><circle cx="15" cy="15.5" r="1.2" fill="#13060c"/></svg>`,
+	);
+	perch(bug, 22, 9);
+}
+
+// Rain World: a slugcat sheltering from the rain curls up on one of the papers (typing "rain" sends one,
+// and now and then one is already there). Waking it up raises your karma, see `eggs.slugcat`.
+function shelter(onScreen = false) {
+	if (document.querySelector('.slugcat')) return;
+	const cat = visitor(
+		'slugcat',
+		'slugcat',
+		'A slugcat, asleep',
+		'<picture><source media="(prefers-reduced-motion: reduce)" srcset="/decor/slugcat-still.png" /><img class="pixelated" src="/decor/slugcat.gif" alt="" width="59" height="58" /></picture>',
+	);
+	perch(cat, 59, 52, onScreen); // the sprite's feet are 5px above the bottom of the frame
+}
+if (Math.random() < 0.05) shelter();
 
 // ---------- wallpaper drift ----------
 

@@ -12,9 +12,6 @@ const drawings = defineCollection({
 			alt: z.string(),
 			category: z.string(),
 			featured: z.boolean(),
-			year: z.union([z.number(), z.string()]).optional(),
-			medium: z.string().optional(),
-			file: z.string(),
 			order: z.number(),
 		}),
 });

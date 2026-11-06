@@ -6,18 +6,21 @@ import bubble from '../assets/stickers/bubble.png';
 import cat from '../assets/stickers/cat.png';
 import mushroom from '../assets/stickers/mushroom.png';
 import sunflower from '../assets/stickers/sunflower.png';
+import { slug } from '../lib/drawings';
 
-// Drawings come from Nico's own repo (src/lib/drawings.ts), already in his order.
+// Drawings come from Nico's own repo (src/lib/drawings.ts), newest first.
 const drawings = (await getCollection('drawings')).sort((a, b) => a.data.order - b.data.order);
-const slug = (text: string) => text.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'other';
 
 type Shape = 'sq' | 'wide' | 'tall' | 'big' | 'bigwide';
 
+// one column wide (sq, tall), two (wide, big) or four (bigwide)
+const one = { widths: [200, 300, 400, 600], sizes: '(min-width: 1080px) 190px, (min-width: 680px) 23vw, 46vw' };
+const two = { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' };
 const layout: Record<Shape, { widths: number[]; sizes: string }> = {
-	sq: { widths: [200, 300, 400, 600], sizes: '(min-width: 1080px) 190px, (min-width: 680px) 23vw, 46vw' },
-	tall: { widths: [200, 300, 400, 600], sizes: '(min-width: 1080px) 190px, (min-width: 680px) 23vw, 46vw' },
-	wide: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
-	big: { widths: [400, 600, 800], sizes: '(min-width: 1080px) 390px, (min-width: 680px) 46vw, 92vw' },
+	sq: one,
+	tall: one,
+	wide: two,
+	big: two,
 	bigwide: { widths: [600, 900, 1200], sizes: '(min-width: 1080px) 790px, 92vw' },
 };
 
@@ -28,7 +31,7 @@ function shapeOf(ratio: number, featured: boolean): Shape {
 
 const items = await Promise.all(
 	drawings.map(async (drawing, i) => {
-		const { image, featured, title, year, medium, category, alt } = drawing.data;
+		const { image, featured, title, category, alt } = drawing.data;
 		const shape = shapeOf(image.width / image.height, featured);
 		// GIFs keep their animation, so they're shown as they are
 		const animated = image.format === 'gif';
@@ -42,7 +45,6 @@ const items = await Promise.all(
 			image,
 			title,
 			alt,
-			meta: [year, medium, category].filter(Boolean).join(' · '),
 			category: slug(category),
 			label: category,
 			shape,
@@ -56,14 +58,14 @@ const items = await Promise.all(
 	}),
 );
 
+// one chip per folder in his repo, alphabetical; none if there's only one
 const counts = new Map<string, number>();
 const labels = new Map<string, string>();
 for (const it of items) {
 	counts.set(it.category, (counts.get(it.category) ?? 0) + 1);
 	labels.set(it.category, it.label);
 }
-// one chip per category, in order of first appearance; no chips if there's only one
-const chips = counts.size > 1 ? [...labels.entries()].map(([id, label]) => ({ id, label })) : [];
+const chips = counts.size > 1 ? [...labels].map(([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label)) : [];
 ---
 
 <section id="gallery" class="gallery wrap" aria-labelledby="gallery-title">
@@ -102,7 +104,7 @@ const chips = counts.size > 1 ? [...labels.entries()].map(([id, label]) => ({ id
 						style={`--tilt:${it.tilt}deg;--tape-tilt:${-it.tilt * 2}deg`}
 						data-id={it.id}
 						data-title={it.title}
-						data-meta={it.meta}
+						data-meta={it.label}
 						data-alt={it.alt}
 						data-srcset={it.srcset}
 						data-w={it.image.width}
@@ -123,7 +125,7 @@ const chips = counts.size > 1 ? [...labels.entries()].map(([id, label]) => ({ id
 						)}
 						<span class="label">
 							<span class="label-title">{it.title}</span>
-							{it.meta && <span class="label-meta">{it.meta}</span>}
+							<span class="label-meta">{it.label}</span>
 						</span>
 					</a>
 				</li>
@@ -247,6 +249,9 @@ const chips = counts.size > 1 ? [...labels.entries()].map(([id, label]) => ({ id
 	}
 
 	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
 		margin-left: auto;
 	}
 
@@ -267,12 +272,6 @@ const chips = counts.size > 1 ? [...labels.entries()].map(([id, label]) => ({ id
 	h2 {
 		font-size: clamp(2.4rem, 5.5vw, 3.8rem);
 		rotate: -3deg;
-	}
-
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 10px;
 	}
 
 	.chips[hidden] {
@@ -423,13 +422,14 @@ const chips = counts.size > 1 ? [...labels.entries()].map(([id, label]) => ({ id
 		}
 	}
 
-	.patch {
+	/* made by gallery.ts, so they don't carry this component's scope */
+	.bento :global(.patch) {
 		display: grid;
 		place-items: center;
 		pointer-events: none;
 	}
 
-	.patch :global(img) {
+	.bento :global(.patch img) {
 		width: min(70%, 150px);
 		height: auto;
 		rotate: var(--r, -8deg);

@@ -4,54 +4,41 @@ import Icon from './Icon.astro';
 
 interface Props {
 	variant?: 'icons' | 'cards';
-	class?: string;
 }
 
-const { variant = 'icons', class: className } = Astro.props;
+const { variant = 'icons' } = Astro.props;
 const cards = variant === 'cards';
-const mail = `${MAIL.user}|${MAIL.domain}`;
 const tilts = [-2.5, 2, -1, 1.5];
+
+// Discord has no profile link for a username, so it's a button that copies it (eggs.ts). The email address is put
+// together in the browser from MAIL, so it's never in the HTML.
+const links = SOCIALS.map((s) => {
+	if (s.id === 'discord') {
+		return { s, Tag: 'button', attrs: { type: 'button', 'data-copy': s.handle }, label: `Discord, ${s.handle}. Copies the username` };
+	}
+	if (s.id === 'email') {
+		return { s, Tag: 'a', attrs: { href: '/contact/#email', 'data-mail': `${MAIL.user}|${MAIL.domain}` }, label: 'Email' };
+	}
+	return { s, Tag: 'a', attrs: { href: s.href, target: '_blank', rel: 'noopener me' }, label: `${s.name}, ${s.handle}` };
+});
 ---
 
-<ul class:list={['socials', variant, className]}>
+<ul class:list={['socials', variant]}>
 	{
-		SOCIALS.map((s, i) => (
+		links.map(({ s, Tag, attrs, label }, i) => (
 			<li class={`s-${s.id}`} style={cards ? `--tilt:${tilts[i]}deg` : undefined}>
-				{s.id === 'discord' ? (
-					<button class="social" type="button" data-copy={s.handle} aria-label={cards ? undefined : `Discord, ${s.handle}. Copies the username`}>
-						<Icon name={s.id} size={cards ? 40 : 30} />
-						{cards && (
-							<>
-								<span class="name chunky">{s.name}</span>
-								<span class="handle">
-									{s.handle} <span class="hint">(copies it)</span>
-								</span>
-							</>
-						)}
-					</button>
-				) : s.id === 'email' ? (
-					<a class="social" href="/contact/#email" data-mail={mail} aria-label={cards ? undefined : 'Email'}>
-						<Icon name={s.id} size={cards ? 40 : 30} />
-						{cards && (
-							<>
-								<span class="name chunky">{s.name}</span>
-								<span class="handle" data-mail-text>
-									{s.handle}
-								</span>
-							</>
-						)}
-					</a>
-				) : (
-					<a class="social" href={s.href} target="_blank" rel="noopener me" aria-label={cards ? undefined : `${s.name}, ${s.handle}`}>
-						<Icon name={s.id} size={cards ? 40 : 30} />
-						{cards && (
-							<>
-								<span class="name chunky">{s.name}</span>
-								<span class="handle">{s.handle}</span>
-							</>
-						)}
-					</a>
-				)}
+				<Tag class="social" {...attrs} aria-label={cards ? undefined : label}>
+					<Icon name={s.id} size={cards ? 40 : 30} />
+					{cards && (
+						<>
+							<span class="name chunky">{s.name}</span>
+							<span class="handle" data-mail-text={s.id === 'email'}>
+								{s.handle}
+								{s.id === 'discord' && <span class="hint"> (copies it)</span>}
+							</span>
+						</>
+					)}
+				</Tag>
 			</li>
 		))
 	}

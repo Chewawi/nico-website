@@ -1,6 +1,5 @@
 :root {
 	--mustard: #e8ca0c;
-	--mustard-deep: #c9ad00;
 	--ink: #13060c;
 	--ink-soft: #3d2a31;
 	--red: #df001d;
@@ -8,7 +7,6 @@
 	--paper: #fffef8;
 	--denim: #1f4fa8;
 	--night: #07050c;
-	--glow: #ffaa50;
 
 	--ground: var(--mustard);
 	--on-ground: var(--ink);
@@ -434,12 +432,6 @@ button.cutout {
 	animation: scuttle 0.5s steps(2) 10;
 }
 
-.ladybug::after {
-	content: '';
-	position: absolute;
-	inset: -10px;
-}
-
 @keyframes scuttle {
 	50% {
 		translate: 1px -1px;
@@ -457,6 +449,47 @@ button.cutout {
 		translate: 140px -220px;
 		rotate: 30deg;
 		opacity: 0;
+	}
+}
+
+/* Rain World's slugcat, curled up on a paper; white with an ink outline so it reads on any ground */
+.slugcat {
+	position: absolute;
+	z-index: 20;
+	padding: 0;
+	border: 0;
+	background: none;
+	filter: drop-shadow(1px 0 0 var(--ink)) drop-shadow(-1px 0 0 var(--ink)) drop-shadow(0 1px 0 var(--ink))
+		drop-shadow(0 -1px 0 var(--ink));
+}
+
+.slugcat img {
+	width: 59px;
+	height: 58px;
+}
+
+/* the karma symbol that rises when it wakes up */
+.karma {
+	position: absolute;
+	z-index: 21;
+	pointer-events: none;
+	image-rendering: pixelated;
+	animation: karma-up 2.4s ease-out forwards;
+}
+
+@keyframes karma-up {
+	from {
+		opacity: 0;
+		scale: 0.6;
+	}
+	20%,
+	70% {
+		opacity: 1;
+		scale: 1;
+	}
+	to {
+		opacity: 0;
+		translate: 0 -36px;
 	}
 }
 
@@ -585,9 +618,12 @@ button.cutout {
 	.ladybug.flown {
 		visibility: hidden;
 	}
-}
 
-@media (prefers-reduced-motion: reduce) {
+	/* the symbol just shows for a moment */
+	.karma {
+		animation: none;
+	}
+
 	*,
 	*::before,
 	*::after {

@@ -6,13 +6,22 @@ Built with Astro and deployed to Cloudflare Workers. Everything is prerendered e
 ## The drawings
 
 The gallery comes from Nico's repo, [MrDino127/drawings](https://github.com/MrDino127/drawings). Every build clones it
-into `.drawings/` (ignored by git) and shows every PNG, JPG, WebP, GIF or AVIF in it, so adding, changing or deleting a
-drawing there is all it takes. See `src/lib/drawings.ts`.
+into `.drawings/` (ignored by git) and shows every PNG, JPG, WebP, GIF or AVIF in it. See `src/lib/drawings.ts`.
 
-Per-drawing info (title, category, featured, alt text, hiding things) goes in an optional `drawings.yaml` at the top of
-his repo. A ready-made starter with every current drawing is in `docs/drawings-repo/drawings.yaml`; the format is
-explained at the top of that file. Without it, titles come from the filenames and everything shows in one category,
-newest first.
+His repo's README explains the layout to him. In short:
+
+- **One folder per category.** The folder name is the filter chip (chips are alphabetical). Pictures outside any folder
+  go under "drawings"; an empty folder, or one where everything is hidden, gets no chip.
+- **An optional `.txt` next to each drawing**, same name: `fan art/Ralsei.gif` → `fan art/Ralsei.txt`. One
+  `key: value` per line: `title`, `alt`, `featured: yes`, `hidden: yes`. A bare `featured` or `hidden` line also
+  means yes, `#` starts a comment, and the match is case-insensitive. Lines it doesn't understand, and .txt files with
+  no drawing, only log a warning, so a typo never breaks the build.
+- **Order: newest first**, by when the file was first added to the repo. Moves and renames keep their date (exact
+  renames are followed in `git log`, which needs no blob downloads), and ties go alphabetically by title. Outside a git
+  checkout everything ties.
+- Names starting with `_` or `.` (files or folders), and anything with "DO NOT REPOST" in the name, never show up.
+- Drawing ids (the `#hash` in shared links) come from the filename only, so moving a drawing between folders keeps its
+  links working.
 
 | Setting | What it does |
 | --- | --- |
@@ -20,8 +29,7 @@ newest first.
 | `DRAWINGS_DIR` | Use a local clone instead of downloading, e.g. `DRAWINGS_DIR=../drawings bun run dev`. Edits show up live. |
 | `DRAWINGS_REPO`, `DRAWINGS_BRANCH` | Another repo or branch (default `MrDino127/drawings`, `main`). |
 
-If the download fails the build fails too, so the live site keeps the last good version. The same goes for a mistake in
-`drawings.yaml`.
+If the download fails the build fails too, so the live site keeps the last good version.
 
 ### Rebuilding when he pushes
 
@@ -36,11 +44,11 @@ If the download fails the build fails too, so the live site keeps the last good 
    as a *Secret* with the token from step 1.
 4. **Deploy hook.** Same page → *Deploy Hooks* → create one for branch `main` and copy the URL.
 5. **In the drawings repo.** *Settings* → *Secrets and variables* → *Actions* → new repository secret
-   `SITE_DEPLOY_HOOK` with that URL. Then add `docs/drawings-repo/rebuild-site.yml` as
-   `.github/workflows/rebuild-site.yml`, and `docs/drawings-repo/drawings.yaml` at the top level.
+   `SITE_DEPLOY_HOOK` with that URL.
 
-From then on every push to his `main` pings the hook and Cloudflare rebuilds the site (a couple of minutes). The
-workflow can also be run by hand from the *Actions* tab.
+The workflow lives in his repo as `.github/workflows/rebuild-site.yml`. Every push to his `main` (except one that only
+touches the README) pings the hook and Cloudflare rebuilds the site, which takes a couple of minutes. It can also be run
+by hand from the *Actions* tab. Without the secret the run fails with a message saying so.
 
 ## Commands
 
@@ -85,5 +93,10 @@ Submissions stop being accepted while 200 drawings are waiting.
 - The penguin on `/fun/` plays `public/sounds/hello.ogg`.
 - `public/decor/dark-fountain.mp4` is DELTARUNE's Dark Fountain with the green keyed out, stored as "stacked alpha"
   (picture on top, transparency below) so one H.264 file works everywhere, Safari included; `src/scripts/fountain.ts`
-  puts it back together with WebGL. `scripts/fountain.sh` rebuilds it from the green-screen original.
+  puts it back together with WebGL. The ffmpeg script that made it from the green-screen original is in git history
+  (`git show fba8f95:scripts/fountain.sh`).
 - `public/decor/niko.gif` is a found Niko (OneShot) emoji.
+- Rain World: typing `rain` sends a slugcat to shelter on one of the papers, where it curls up asleep (now and then one
+  is already there). Clicking it wakes it, and a karma symbol rises where it slept. `public/decor/slugcat.gif` is the
+  wiki's `Remix_Tips_Sleep.gif` cut to play once and end asleep, `slugcat-still.png` is that last frame for reduced
+  motion, and `karma.png` is `Karma_5_icon.png`, both from the [Rain World Wiki](https://rainworld.miraheze.org).
