@@ -33,7 +33,7 @@ import Base from '../layouts/Base.astro';
 
 <style>
 	:global(body) {
-		background: var(--night);
+		background: #000;
 		color: #f4ecd8;
 	}
 
@@ -49,10 +49,12 @@ import Base from '../layouts/Base.astro';
 	}
 
 	/* candlelight that follows the pointer, as on the old "second" page */
-	.room::before {
+	.room::after {
 		content: '';
 		position: fixed;
 		inset: 0;
+		z-index: 1;
+		mix-blend-mode: screen;
 		background: radial-gradient(380px circle at var(--x) var(--y), rgb(255 170 80 / 0.22), rgb(7 5 12 / 0) 70%);
 		animation: flicker 3.4s steps(6) infinite;
 		pointer-events: none;

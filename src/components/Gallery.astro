@@ -1,10 +1,13 @@
 ---
 import { getImage, Picture } from 'astro:assets';
 import { getCollection } from 'astro:content';
+import categoriesYaml from '../content/categories.yaml?raw';
+import worksYaml from '../content/works/works.yaml?raw';
+import { inFileOrder } from '../lib/order';
 
-const categories = (await getCollection('categories')).filter((c) => !c.data.hidden);
+const categories = inFileOrder(await getCollection('categories'), categoriesYaml).filter((c) => !c.data.hidden);
 const labels = new Map(categories.map((c) => [c.id, c.data.label]));
-const works = (await getCollection('works')).filter((w) => labels.has(w.data.category.id));
+const works = inFileOrder(await getCollection('works'), worksYaml).filter((w) => labels.has(w.data.category.id));
 
 type Shape = 'sq' | 'wide' | 'tall' | 'big' | 'bigwide' | 'bigtall';
 
@@ -386,19 +389,20 @@ const chips = categories.filter((c) => counts.has(c.id));
 	}
 
 	.lb-stage {
+		--pad: clamp(14px, 3vw, 36px);
+		position: relative;
 		min-height: 0;
-		display: grid;
-		place-items: center;
-		padding: clamp(14px, 3vw, 36px);
 		touch-action: pan-y;
 	}
 
 	.lb-img {
-		max-width: 100%;
-		max-height: 100%;
+		position: absolute;
+		inset: 0;
+		margin: auto;
+		max-width: calc(100% - 2 * var(--pad));
+		max-height: calc(100% - 2 * var(--pad));
 		width: auto;
 		height: auto;
-		object-fit: contain;
 		background: #fff;
 		box-shadow: 0 20px 60px -20px rgb(0 0 0 / 0.8);
 	}
