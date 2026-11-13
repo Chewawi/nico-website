@@ -1,13 +1,14 @@
 import type { APIRoute } from 'astro';
-import { db, isAdmin } from '../../../lib/guestbook';
+import { first } from '../../../lib/db';
+import { isAdmin } from '../../../lib/guestbook';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params, request }) => {
-	const row = await db()
-		.prepare('SELECT status, image FROM drawings WHERE id = ?')
-		.bind(params.id)
-		.first<{ status: string; image: ArrayBuffer | number[] }>();
+	const row = await first<{ status: string; image: ArrayBuffer | Uint8Array }>(
+		'SELECT status, image FROM drawings WHERE id = ?',
+		params.id ?? '',
+	);
 
 	const approved = row?.status === 'approved';
 	if (!row || (!approved && !isAdmin(request))) return new Response('Not found', { status: 404 });

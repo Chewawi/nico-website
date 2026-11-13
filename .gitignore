@@ -3,17 +3,16 @@ dist/
 .astro/
 node_modules/
 
-# local secrets and Cloudflare's local state
-.dev.vars
-.env
-.wrangler/
+# build output for Vercel
+.vercel/
 
-# synced drawings repo (see src/lib/drawings.ts)
+# local secrets and the local guestbook database
+.env*
+!.env.example
+data/
+
+# synced drawings repo
 .drawings/
 
-# raw green-screen source of the dark fountain, if you have it locally
-src/assets/dark.mp4
-
-# editor and agent files, kept local
+# editor files
 .vscode/
-AGENTS.md

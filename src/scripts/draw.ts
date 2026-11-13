@@ -124,11 +124,11 @@ if (form) {
 		a.click();
 	});
 
-	// Turnstile loads only on this page, and only once the pad is in use.
-	const turnstileBox = $('[data-turnstile]');
+	// Turnstile is only there when the site has its keys. It loads only once the pad is in use.
+	const turnstileBox = form.querySelector<HTMLElement>('[data-turnstile]');
 	let loading = false;
 	const loadTurnstile = () => {
-		if (loading) return;
+		if (loading || !turnstileBox) return;
 		loading = true;
 		const s = document.createElement('script');
 		s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -159,10 +159,12 @@ if (form) {
 		sendBtn.disabled = true;
 		status.className = 'form-status';
 		try {
-			loadTurnstile();
-			status.textContent = 'checking you’re not a robot…';
-			if (!(await tokenReady())) {
-				throw new Error('the robot check didn’t load. if something blocks challenges.cloudflare.com, allow it and try again');
+			if (turnstileBox) {
+				loadTurnstile();
+				status.textContent = 'checking you’re not a robot…';
+				if (!(await tokenReady())) {
+					throw new Error('the robot check didn’t load. if something blocks challenges.cloudflare.com, allow it and try again');
+				}
 			}
 			status.textContent = 'sending…';
 			const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));

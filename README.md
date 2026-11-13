@@ -1,7 +1,8 @@
 # mrnico12
 
 Portfolio of Nicolas (mrnico12): a gallery of drawings, an about page, contact links and a drawing guestbook.
-Built with Astro and deployed to Cloudflare Workers. Everything is prerendered except the guestbook, which uses Cloudflare D1.
+Built with Astro. Everything is prerendered except the guestbook and the visitor counter, which use a small SQLite
+database. It runs as a plain Node server (your own machine, a VPS, anything that runs Node) or on Vercel.
 
 ## The drawings
 
@@ -37,46 +38,79 @@ If the download fails the build fails too, so the live site keeps the last good 
    github.com/settings/personal-access-tokens/new: *Repository access* → *Only select repositories* → `drawings`;
    *Permissions* → *Contents: Read-only* (nothing else). It has to be his account, because fine-grained tokens only
    reach repos owned by the account that makes them.
-2. **Build from Git on Cloudflare.** Push this project to its own GitHub repo, then in the Cloudflare dashboard go to
-   *Workers & Pages* → `nicoportfolio` → *Settings* → *Builds* → *Connect* and pick it. Build command `bun run build`,
-   deploy command `npx wrangler deploy`.
-3. **The secret.** Same page → *Variables and secrets* (the build ones, not the runtime ones) → add `DRAWINGS_TOKEN`
-   as a *Secret* with the token from step 1.
-4. **Deploy hook.** Same page → *Deploy Hooks* → create one for branch `main` and copy the URL.
+2. **Build from Git on Vercel.** See [Hosting on Vercel](#hosting-on-vercel).
+3. **The secret.** In the Vercel project: *Settings* → *Environment Variables* → add `DRAWINGS_TOKEN` with the token
+   from step 1.
+4. **Deploy hook.** *Settings* → *Git* → *Deploy Hooks* → create one for branch `main` and copy the URL.
 5. **In the drawings repo.** *Settings* → *Secrets and variables* → *Actions* → new repository secret
    `SITE_DEPLOY_HOOK` with that URL.
 
 The workflow lives in his repo as `.github/workflows/rebuild-site.yml`. Every push to his `main` (except one that only
-touches the README) pings the hook and Cloudflare rebuilds the site, which takes a couple of minutes. It can also be run
-by hand from the *Actions* tab. Without the secret the run fails with a message saying so.
+touches the README) pings the hook and Vercel rebuilds the site, which takes a couple of minutes. It can also be run
+by hand from the *Actions* tab. Without the secret the run fails with a message saying so. On your own server there is
+no hook: run `bun run build` again and restart it.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
 | `bun install` | Install dependencies |
-| `bun run dev` | Dev server with a local database (see the musl note below) |
-| `bun run build` | Build to `dist/` |
-| `bun run db:migrate:local` | Create the guestbook tables in workerd's local D1 (glibc only) |
-| `bun run deploy` | Build and deploy to Cloudflare |
+| `bun run dev` | Dev server at `localhost:4321` |
+| `bun run build` | Build to `dist/` (or to `.vercel/output/` on Vercel) |
+| `bun run start` | Run the built site with Node at `localhost:4321` |
 
-Local secrets go in `.dev.vars` (copy `.dev.vars.example`). They hold Cloudflare's Turnstile test keys and the admin password.
+## Settings
 
-**musl Linux (e.g. Chimera):** Cloudflare's local runtime (`workerd`) needs glibc. On musl, `astro dev` detects this,
-runs without the Cloudflare adapter and swaps `cloudflare:workers` for `src/dev/workers-local.ts`, a stand-in that keeps
-D1 in a SQLite file (`.wrangler/local/d1.sqlite`) and applies `migrations/` itself. Turnstile still uses the test keys,
-so the guestbook needs internet access in dev. Builds and deploys always use the real Cloudflare adapter;
-`astro preview` needs workerd and won't run on musl.
+Copy `.env.example` to `.env`. `bun run dev`, `bun run build` and `bun run start` read it; on Vercel the same names go
+in the project's environment variables. `SITE` and the `DRAWINGS_*` settings above are used by the build. The rest are
+read when the server runs, so changing one needs a restart, not a rebuild.
 
-## First deploy
+| Setting | What it does |
+| --- | --- |
+| `ADMIN_PASSWORD` | Password for `/admin/`. Without it nobody can get in. |
+| `DATABASE_PATH` | Where the SQLite file goes (default `data/guestbook.sqlite`). |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Use a [Turso](https://turso.tech) database instead of a file. Needed on Vercel. |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Optional robot check on the guestbook (Cloudflare Turnstile, free, works on any host). Off unless both are set. |
+| `SITE` | The site's address when it isn't `https://nico.kodeko.org`. Vercel fills it in by itself. |
 
-1. `bunx wrangler login`
-2. `bunx wrangler d1 create nicoportfolio`, then put the printed `database_id` in `wrangler.jsonc`.
-3. `bunx wrangler d1 migrations apply DB --remote`
-4. Create a Turnstile widget for `nico.kodeko.org` in the Cloudflare dashboard. Put its site key in `wrangler.jsonc`
-   (`TURNSTILE_SITE_KEY`) and set the secret: `bunx wrangler secret put TURNSTILE_SECRET_KEY`.
-5. `bunx wrangler secret put ADMIN_PASSWORD`
-6. `bun run deploy`, then add the custom domain `nico.kodeko.org` to the Worker.
+The database (see `src/lib/db.ts`) creates its own tables from `migrations/` the first time it is used, on a file and
+on Turso alike. Without Turnstile the guestbook still has a honeypot field, the moderation queue and its 200-drawing
+limit, but nothing stops a script from filling that queue.
+
+## Hosting it yourself
+
+```sh
+bun install
+bun run build
+bun run start
+```
+
+That serves the site at `http://localhost:4321` with Node (22 or newer). The guestbook lives in
+`data/guestbook.sqlite`, so that file is the one to back up.
+
+- `HOST=0.0.0.0` makes it reachable from other machines, and `PORT` changes the port.
+- **Another address than nico.kodeko.org** (a different domain, or a LAN address like `http://192.168.1.42:4321`):
+  build with `SITE=https://your.domain bun run build`. Besides `localhost`, the server only accepts guestbook and
+  admin submissions that come from that address.
+- **Behind a reverse proxy** (Caddy, nginx), the proxy has to pass the original `Host` header and
+  `X-Forwarded-Proto`. Caddy does both by itself; nginx needs `proxy_set_header Host $host;` and
+  `proxy_set_header X-Forwarded-Proto $scheme;`.
+
+## Hosting on Vercel
+
+The build notices Vercel by itself and switches adapter; there is nothing to configure in the repo.
+
+1. Push this project to its own GitHub repo and import it at vercel.com/new. The defaults are right.
+2. Vercel has no disk to keep a SQLite file on, so make a free database at [turso.tech](https://turso.tech) (or
+   `turso db create nicoportfolio`). Copy its URL (`turso db show --url nicoportfolio`) and a token
+   (`turso db tokens create nicoportfolio`).
+3. In the Vercel project, *Settings* → *Environment Variables*: add `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` and
+   `ADMIN_PASSWORD` (plus the Turnstile pair and `DRAWINGS_TOKEN` if you use them).
+4. Redeploy so the variables take effect, then add the domain under *Settings* → *Domains*. Links and the sitemap
+   follow the project's production domain.
+
+Until the Turso variables are there, the guestbook and the visitor counter answer with an error; the rest of the site
+works.
 
 ## Guestbook moderation
 

@@ -1,13 +1,20 @@
 // @ts-check
 
-import cloudflare from '@astrojs/cloudflare';
+import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
-import { defineConfig, fontProviders } from 'astro/config';
+import vercel from '@astrojs/vercel';
+import { existsSync } from 'node:fs';
+import { defineConfig, envField, fontProviders } from 'astro/config';
 
-// Cloudflare's local runtime (workerd) needs glibc. On musl systems, `astro dev` runs
-// without the adapter and uses a SQLite stand-in for D1 instead. Builds always use Cloudflare.
-const glibc = Boolean(process.report?.getReport().header.glibcVersionRuntime);
-const localRuntime = process.argv.includes('dev') && !glibc;
+// Astro doesn't pass .env to this file or to the drawings loader, which read SITE and DRAWINGS_* at build time.
+if (existsSync('.env')) process.loadEnvFile();
+
+// On Vercel the address is the project's production domain.
+const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+const site = process.env.SITE ?? (vercelDomain ? `https://${vercelDomain}` : 'https://nico.kodeko.org');
+
+// Read when the server runs, so they can change without a rebuild.
+const setting = (options = {}) => envField.string({ context: 'server', access: 'secret', optional: true, ...options });
 
 const local = (name, cssVariable, fallbacks, variants) => ({
 	provider: fontProviders.local(),
@@ -25,15 +32,25 @@ const local = (name, cssVariable, fallbacks, variants) => ({
 });
 
 export default defineConfig({
-	site: 'https://nico.kodeko.org',
-	adapter: localRuntime ? undefined : cloudflare({ imageService: 'compile', prerenderEnvironment: 'node' }),
-	vite: {
-		...(localRuntime && {
-			resolve: { alias: { 'cloudflare:workers': new URL('./src/dev/workers-local.ts', import.meta.url).pathname } },
-		}),
-		// a local clone of the drawings repo outside this folder (see src/lib/drawings.ts)
-		...(process.env.DRAWINGS_DIR && { server: { fs: { allow: ['.', process.env.DRAWINGS_DIR] } } }),
+	site,
+	// The Node server only trusts the Host header for this domain (and localhost); the guestbook's same-origin
+	// checks need that behind a proxy.
+	security: { allowedDomains: [{ hostname: new URL(site).hostname }] },
+	// Vercel sets VERCEL in its builds; anywhere else this is a plain Node server.
+	adapter: process.env.VERCEL ? vercel() : node({ mode: 'standalone' }),
+	env: {
+		schema: {
+			ADMIN_PASSWORD: setting(),
+			// see src/lib/db.ts
+			DATABASE_PATH: setting({ optional: false, default: 'data/guestbook.sqlite' }),
+			TURSO_DATABASE_URL: setting(),
+			TURSO_AUTH_TOKEN: setting(),
+			TURNSTILE_SITE_KEY: setting(),
+			TURNSTILE_SECRET_KEY: setting(),
+		},
 	},
+	// a local clone of the drawings repo outside this folder (see src/lib/drawings.ts)
+	...(process.env.DRAWINGS_DIR && { vite: { server: { fs: { allow: ['.', process.env.DRAWINGS_DIR] } } } }),
 	session: false,
 	integrations: [sitemap({ filter: (page) => !/\/(admin|fun|egg)\/?$/.test(page) })],
 	image: { responsiveStyles: false },

@@ -1,5 +1,6 @@
 ---
-import { CANVAS, db, type Entry, formatDate, isAdmin, unauthorized } from '../lib/guestbook';
+import { query } from '../lib/db';
+import { CANVAS, type Entry, formatDate, isAdmin, unauthorized } from '../lib/guestbook';
 import Base from '../layouts/Base.astro';
 
 export const prerender = false;
@@ -8,13 +9,13 @@ if (!isAdmin(Astro.request)) return unauthorized();
 Astro.response.headers.set('cache-control', 'private, no-store');
 
 const [pending, approved] = await Promise.all([
-	db().prepare("SELECT id, created_at, name, message FROM drawings WHERE status = 'pending' ORDER BY created_at ASC LIMIT 100").all<Entry>(),
-	db().prepare("SELECT id, created_at, name, message FROM drawings WHERE status = 'approved' ORDER BY created_at DESC LIMIT 60").all<Entry>(),
+	query<Entry>("SELECT id, created_at, name, message FROM drawings WHERE status = 'pending' ORDER BY created_at ASC LIMIT 100"),
+	query<Entry>("SELECT id, created_at, name, message FROM drawings WHERE status = 'approved' ORDER BY created_at DESC LIMIT 60"),
 ]);
 
 const groups = [
-	{ title: 'Waiting for you', empty: 'Nothing new. All caught up!', rows: pending.results, approve: true },
-	{ title: 'On the wall (newest 60)', empty: 'Nothing on the wall yet.', rows: approved.results, approve: false },
+	{ title: 'Waiting for you', empty: 'Nothing new. All caught up!', rows: pending, approve: true },
+	{ title: 'On the wall (newest 60)', empty: 'Nothing on the wall yet.', rows: approved, approve: false },
 ];
 ---
 

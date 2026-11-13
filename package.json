@@ -10,17 +10,17 @@
 		"dev": "astro dev",
 		"build": "astro build",
 		"preview": "astro preview",
-		"db:migrate:local": "wrangler d1 migrations apply DB --local",
-		"deploy": "astro build && wrangler deploy"
+		"start": "node --env-file-if-exists=.env dist/server/entry.mjs"
 	},
 	"dependencies": {
-		"@astrojs/cloudflare": "^14.4.6",
+		"@astrojs/node": "^11.1.12",
 		"@astrojs/sitemap": "^3.7.4",
+		"@astrojs/vercel": "^11.0.21",
+		"@libsql/client": "^0.18.0",
 		"astro": "^7.4.7",
 		"sharp": "^0.35.0"
 	},
 	"devDependencies": {
-		"@img/sharp-wasm32": "^0.35.5",
-		"wrangler": "^4.158.0"
+		"@img/sharp-wasm32": "^0.35.5"
 	}
 }

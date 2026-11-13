@@ -1,64 +1,93 @@
 ---
-import { env } from 'cloudflare:workers';
-import { Image } from 'astro:assets';
-import konamiEntry from '../assets/decor/konami-entry.png';
-import Icon from '../components/Icon.astro';
-import { CANVAS, db, type Entry, formatDate, LIMITS } from '../lib/guestbook';
-import Base from '../layouts/Base.astro';
+import { Image } from "astro:assets";
+import konamiEntry from "../assets/decor/konami-entry.png";
+import gregg from "../assets/stickers/gregg.png";
+import Icon from "../components/Icon.astro";
+import { first, query } from "../lib/db";
+import {
+	CANVAS,
+	type Entry,
+	formatDate,
+	LIMITS,
+	robotCheck,
+} from "../lib/guestbook";
+import Base from "../layouts/Base.astro";
 
 export const prerender = false;
 
-const page = Math.max(1, Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10) || 1);
+const page = Math.max(
+	1,
+	Number.parseInt(Astro.url.searchParams.get("page") ?? "1", 10) || 1,
+);
 const offset = (page - 1) * LIMITS.perPage;
 
 const [total, entries] = await Promise.all([
-	db().prepare("SELECT COUNT(*) AS n FROM drawings WHERE status = 'approved'").first<{ n: number }>(),
-	db()
-		.prepare("SELECT id, created_at, name, message FROM drawings WHERE status = 'approved' ORDER BY created_at DESC LIMIT ? OFFSET ?")
-		.bind(LIMITS.perPage, offset)
-		.all<Entry>(),
+	first<{ n: number }>(
+		"SELECT COUNT(*) AS n FROM drawings WHERE status = 'approved'",
+	),
+	query<Entry>(
+		"SELECT id, created_at, name, message FROM drawings WHERE status = 'approved' ORDER BY created_at DESC LIMIT ? OFFSET ?",
+		LIMITS.perPage,
+		offset,
+	),
 ]);
+const siteKey = robotCheck();
 const count = total?.n ?? 0;
 const pages = Math.max(1, Math.ceil(count / LIMITS.perPage));
 const tilts = [-2, 1.5, -1, 2.5, -2.5, 1, 0.5, -1.5];
 
-Astro.response.headers.set('cache-control', 'public, max-age=60');
+Astro.response.headers.set("cache-control", "public, max-age=60");
 
 const colours = [
-	['#13060c', 'Ink'],
-	['#ffffff', 'White'],
-	['#df001d', 'Red'],
-	['#f08c00', 'Orange'],
-	['#e8ca0c', 'Mustard'],
-	['#2f9e44', 'Green'],
-	['#4dabf7', 'Sky'],
-	['#1f4fa8', 'Denim'],
-	['#7b2d8e', 'Purple'],
-	['#f783ac', 'Pink'],
-	['#8b5a2b', 'Brown'],
+	["#13060c", "Ink"],
+	["#ffffff", "White"],
+	["#df001d", "Red"],
+	["#f08c00", "Orange"],
+	["#e8ca0c", "Mustard"],
+	["#2f9e44", "Green"],
+	["#4dabf7", "Sky"],
+	["#1f4fa8", "Denim"],
+	["#7b2d8e", "Purple"],
+	["#f783ac", "Pink"],
+	["#8b5a2b", "Brown"],
 ];
 const sizes = [
-	[3, 'Thin'],
-	[8, 'Medium'],
-	[18, 'Thick'],
+	[3, "Thin"],
+	[8, "Medium"],
+	[18, "Thick"],
 ] as const;
 ---
 
-<Base title="Guestbook" description="Sign mrnico12's guestbook by drawing something." ground="sparkle">
+<Base
+	title="Guestbook"
+	description="Sign mrnico12's guestbook by drawing something."
+	ground="sparkle"
+>
 	<div class="gb wrap">
 		<header class="gb-head">
 			<h1 class="scrawl">guestbook</h1>
-			<p class="lede">draw me something. it shows up on the wall once i've seen it.</p>
+			<p class="lede">
+				draw me something. it shows up on the wall once i've seen it.
+			</p>
 		</header>
 
 		<form class="sketchbook paper tape" data-sign hidden>
 			<div class="tools">
 				<fieldset class="swatches">
-					<legend><Icon name="palette" /><span class="sr-only">Colour</span></legend>
+					<legend
+						><Icon name="palette" /><span class="sr-only"
+							>Colour</span
+						></legend
+					>
 					{
 						colours.map(([hex, name], i) => (
 							<label class="swatch" style={`--c:${hex}`}>
-								<input type="radio" name="colour" value={hex} checked={i === 0} />
+								<input
+									type="radio"
+									name="colour"
+									value={hex}
+									checked={i === 0}
+								/>
 								<span class="sr-only">{name}</span>
 							</label>
 						))
@@ -70,12 +99,24 @@ const sizes = [
 				</fieldset>
 
 				<fieldset class="sizes">
-					<legend><Icon name="brush" /><span class="sr-only">Brush size</span></legend>
+					<legend
+						><Icon name="brush" /><span class="sr-only"
+							>Brush size</span
+						></legend
+					>
 					{
 						sizes.map(([px, name], i) => (
 							<label class="size">
-								<input type="radio" name="size" value={px} checked={i === 1} />
-								<span class="dot" style={`--d:${Math.min(px, 14) + 4}px`} />
+								<input
+									type="radio"
+									name="size"
+									value={px}
+									checked={i === 1}
+								/>
+								<span
+									class="dot"
+									style={`--d:${Math.min(px, 14) + 4}px`}
+								/>
 								<span class="sr-only">{name}</span>
 							</label>
 						))
@@ -88,9 +129,30 @@ const sizes = [
 				</fieldset>
 
 				<div class="actions">
-					<button class="tool-btn" type="button" data-undo disabled aria-label="Undo" title="Undo"><Icon name="undo" /></button>
-					<button class="tool-btn" type="button" data-clear disabled aria-label="Clear the page" title="Clear"><Icon name="clear" /></button>
-					<button class="tool-btn" type="button" data-save disabled aria-label="Save to your device" title="Save"><Icon name="save" /></button>
+					<button
+						class="tool-btn"
+						type="button"
+						data-undo
+						disabled
+						aria-label="Undo"
+						title="Undo"><Icon name="undo" /></button
+					>
+					<button
+						class="tool-btn"
+						type="button"
+						data-clear
+						disabled
+						aria-label="Clear the page"
+						title="Clear"><Icon name="clear" /></button
+					>
+					<button
+						class="tool-btn"
+						type="button"
+						data-save
+						disabled
+						aria-label="Save to your device"
+						title="Save"><Icon name="save" /></button
+					>
 				</div>
 			</div>
 
@@ -98,68 +160,126 @@ const sizes = [
 				width={CANVAS.width}
 				height={CANVAS.height}
 				data-canvas
-				aria-label="Drawing canvas. Draw with a mouse, finger or pen."></canvas>
+				aria-label="Drawing canvas. Draw with a mouse, finger or pen."
+			></canvas>
 
 			<div class="fields">
 				<label class="field">
 					<span>name <small>(optional)</small></span>
-					<input name="name" maxlength={LIMITS.name} autocomplete="nickname" />
+					<input
+						name="name"
+						maxlength={LIMITS.name}
+						autocomplete="nickname"
+					/>
 				</label>
 				<label class="field">
 					<span>message <small>(optional)</small></span>
-					<textarea name="message" maxlength={LIMITS.message} rows="2"></textarea>
+					<textarea name="message" maxlength={LIMITS.message} rows="2"
+					></textarea>
 				</label>
 				<label class="hp" aria-hidden="true">
-					Leave this empty <input name="hp_extra" tabindex="-1" autocomplete="off" />
+					Leave this empty <input
+						name="hp_extra"
+						tabindex="-1"
+						autocomplete="off"
+					/>
 				</label>
 			</div>
 
 			<div class="send-row">
-				<div class="turnstile" data-turnstile data-sitekey={env.TURNSTILE_SITE_KEY}></div>
-				<button class="sticker big send" type="submit" data-send disabled>send</button>
+				{
+					siteKey && (
+						<div
+							class="turnstile"
+							data-turnstile
+							data-sitekey={siteKey}
+						/>
+					)
+				}
+				<button
+					class="sticker big send"
+					type="submit"
+					data-send
+					disabled>send</button
+				>
 			</div>
 			<p class="form-status" role="status" data-status></p>
 		</form>
-		<noscript><p class="paper nojs">the drawing pad needs javascript.</p></noscript>
+		<noscript
+			><p class="paper nojs">
+				the drawing pad needs javascript.
+			</p></noscript
+		>
 
 		<section class="wall" aria-labelledby="wall-title">
 			<h2 id="wall-title">
 				<span class="chunky printed">the wall</span>
-				<span class="pixel wall-count">{count} {count === 1 ? 'drawing' : 'drawings'}</span>
+				<span class="pixel wall-count"
+					>{count} {count === 1 ? "drawing" : "drawings"}</span
+				>
 			</h2>
-			<p class="graffiti scrawl" aria-hidden="true">gregg rulz ok</p>
 
 			<ol class="entries">
-				{entries.results.map((e, i) => (
-					<li class="entry" style={`--tilt:${tilts[i % tilts.length]}deg`}>
-						<figure class="polaroid paper tape">
-							<img
-								src={`/api/drawing/${e.id}`}
-								width={CANVAS.width}
-								height={CANVAS.height}
-								loading={i < 4 ? 'eager' : 'lazy'}
-								decoding="async"
-								alt={`Drawing by ${e.name || 'anonymous'}`}
-							/>
-							<figcaption>
-								<span class="who">{e.name || 'anonymous'}</span>
-								<span class="when pixel">
-									#{count - offset - i} · {formatDate(e.created_at)}
-								</span>
-								{e.message && <span class="msg">{e.message}</span>}
-							</figcaption>
-						</figure>
-					</li>
-				))}
+				{
+					entries.map((e, i) => (
+						<li
+							class="entry"
+							style={`--tilt:${tilts[i % tilts.length]}deg`}
+						>
+							<figure class="polaroid paper tape">
+								<img
+									src={`/api/drawing/${e.id}`}
+									width={CANVAS.width}
+									height={CANVAS.height}
+									loading={i < 4 ? "eager" : "lazy"}
+									decoding="async"
+									alt={`Drawing by ${e.name || "anonymous"}`}
+								/>
+								<figcaption>
+									<span class="who">
+										{e.name || "anonymous"}
+									</span>
+									<span class="when pixel">
+										#{count - offset - i} ·{" "}
+										{formatDate(e.created_at)}
+									</span>
+									{e.message && (
+										<span class="msg">{e.message}</span>
+									)}
+								</figcaption>
+							</figure>
+						</li>
+					))
+				}
 				{
 					page === pages && (
 						<li class="entry old" style="--tilt:-3deg">
 							<figure class="polaroid paper tape">
-								<Image src={konamiEntry} alt="Drawing by kris: arrows going up, up, down, down, left, right, left, right, then the letters B and A" width={480} />
+								<Image
+									src={konamiEntry}
+									alt="Drawing by ???: arrows going up, up, down, down, left, right, left, right, then the letters B and A"
+									width={480}
+								/>
 								<figcaption>
-									<span class="who">kris</span>
+									<span class="who">???</span>
 									<span class="when pixel">#0 · ???</span>
 									<span class="msg">works on every page</span>
+								</figcaption>
+							</figure>
+						</li>
+
+						/* someone from Possum Springs got here first */
+						<li class="entry old" style="--tilt:-3deg">
+							<figure class="polaroid paper tape">
+								<Image
+									src={gregg}
+									alt="gregg rulz ok"
+									width={480}
+								/>
+								<figcaption>
+									<span class="who">mae</span>
+									<span class="when pixel">#1 · gregg</span>
+									<span class="msg">gregg rulz ok</span>
 								</figcaption>
 							</figure>
 						</li>
@@ -171,7 +291,14 @@ const sizes = [
 				pages > 1 && (
 					<nav class="pager" aria-label="Wall pages">
 						{page > 1 && (
-							<a class="sticker" href={page === 2 ? '/guestbook/' : `/guestbook/?page=${page - 1}`}>
+							<a
+								class="sticker"
+								href={
+									page === 2
+										? "/guestbook/"
+										: `/guestbook/?page=${page - 1}`
+								}
+							>
 								newer
 							</a>
 						)}
@@ -179,7 +306,10 @@ const sizes = [
 							page {page} of {pages}
 						</span>
 						{page < pages && (
-							<a class="sticker" href={`/guestbook/?page=${page + 1}`}>
+							<a
+								class="sticker"
+								href={`/guestbook/?page=${page + 1}`}
+							>
 								older
 							</a>
 						)}
@@ -191,7 +321,7 @@ const sizes = [
 </Base>
 
 <script>
-	import '../scripts/draw';
+	import "../scripts/draw";
 </script>
 
 <style>
@@ -216,10 +346,10 @@ const sizes = [
 		display: grid;
 		grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
 		grid-template-areas:
-			'tools tools'
-			'canvas fields'
-			'canvas send'
-			'status status';
+			"tools tools"
+			"canvas fields"
+			"canvas send"
+			"status status";
 		gap: 16px 28px;
 		max-width: 980px;
 		padding: clamp(16px, 3vw, 28px);
@@ -461,7 +591,7 @@ const sizes = [
 	@media (max-width: 760px) {
 		.sketchbook {
 			grid-template-columns: 1fr;
-			grid-template-areas: 'tools' 'canvas' 'fields' 'send' 'status';
+			grid-template-areas: "tools" "canvas" "fields" "send" "status";
 			rotate: 0deg;
 		}
 
@@ -486,18 +616,16 @@ const sizes = [
 		font-size: clamp(1.6rem, 3.5vw, 2.4rem);
 	}
 
-	/* someone from Possum Springs got here first */
-	.graffiti {
+	/* .graffiti {
 		position: absolute;
-		top: -6px;
-		right: clamp(0px, 4vw, 60px);
+		top: -155px;
+		right: clamp(0px, 2vw, 60px);
 		margin: 0;
 		color: var(--denim);
-		font-size: clamp(0.95rem, 2vw, 1.35rem);
 		rotate: -7deg;
 		opacity: 0.75;
 		pointer-events: none;
-	}
+	} */
 
 	:root.dark-world .graffiti {
 		color: #8fb4ff;

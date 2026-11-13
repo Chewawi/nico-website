@@ -1,6 +1,14 @@
 ---
+import { Image } from "astro:assets";
+
+import kodekoLogo from "../assets/kodeko.svg";
+
 const built = new Date();
-const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const updated = built.toLocaleDateString("en-GB", {
+	day: "numeric",
+	month: "short",
+	year: "numeric",
+});
 ---
 
 <footer class="site-footer">
@@ -8,41 +16,116 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 		<ul class="badges" aria-label="Web buttons">
 			<li><a class="badge b-home" href="/">mrnico12<br />★ home ★</a></li>
 			<li>
-				<button class="badge b-viewed" type="button" data-egg="viewed" aria-live="polite">best viewed with your eyes</button>
+				<button
+					class="badge b-viewed"
+					type="button"
+					data-egg="viewed"
+					aria-live="polite">best viewed with your eyes</button
+				>
 			</li>
 			<li>
 				<span class="badge b-uy">
-					<svg class="flag" viewBox="0 0 27 18" width="24" height="16" role="img" aria-label="Flag of Uruguay">
+					<svg
+						class="flag"
+						viewBox="0 0 27 18"
+						width="24"
+						height="16"
+						role="img"
+						aria-label="Flag of Uruguay"
+					>
 						<rect width="27" height="18" fill="#fff"></rect>
-						<path d="M10 2h17v2H10zM10 6h17v2H10zM0 10h27v2H0zM0 14h27v2H0z" fill="#0038a8"></path>
+						<path
+							d="M10 2h17v2H10zM10 6h17v2H10zM0 10h27v2H0zM0 14h27v2H0z"
+							fill="#0038a8"></path>
 						<polygon
 							points="5.00,1.30 5.49,2.55 6.42,1.58 6.39,2.92 7.62,2.38 7.08,3.61 8.42,3.58 7.45,4.51 8.70,5.00 7.45,5.49 8.42,6.42 7.08,6.39 7.62,7.62 6.39,7.08 6.42,8.42 5.49,7.45 5.00,8.70 4.51,7.45 3.58,8.42 3.61,7.08 2.38,7.62 2.92,6.39 1.58,6.42 2.55,5.49 1.30,5.00 2.55,4.51 1.58,3.58 2.92,3.61 2.38,2.38 3.61,2.92 3.58,1.58 4.51,2.55"
 							fill="#fcd116"
 							stroke="#7b3f00"
 							stroke-width="0.3"></polygon>
-						<circle cx="5" cy="5" r="1.9" fill="#fcd116" stroke="#7b3f00" stroke-width="0.3"></circle>
+						<circle
+							cx="5"
+							cy="5"
+							r="1.9"
+							fill="#fcd116"
+							stroke="#7b3f00"
+							stroke-width="0.3"></circle>
 					</svg>
 					<span>hecho en<br />uruguay</span>
 				</span>
 			</li>
-			<li><a class="badge b-gb" href="/guestbook/"><span class="blink">sign my</span>guestbook!</a></li>
+			<li>
+				<a href="https://kodeko.org" class="badge b-kodeko">
+					<Image
+						src={kodekoLogo}
+						alt="Kodeko"
+						aria-label="Kodeko Org, banner."
+						width={24}
+					/>
+					Kodeko Org.
+				</a>
+			</li>
+			<li>
+				<a class="badge b-gb" href="/guestbook/"
+					><span class="blink">sign my</span>guestbook!</a
+				>
+			</li>
 		</ul>
 
 		<div class="meta">
 			<p class="counter pixel" data-counter hidden>
 				you are visitor no.
-				<button class="digits" type="button" data-egg="counter" data-digits aria-label="Visitor number">000000</button>
+				<button
+					class="digits"
+					type="button"
+					data-egg="counter"
+					data-digits
+					aria-label="Visitor number">000000</button
+				>
 			</p>
-			<button class="niko" type="button" data-egg="niko" aria-label="Niko from OneShot, dancing">
+			<button
+				class="niko"
+				type="button"
+				data-egg="niko"
+				aria-label="Niko from OneShot, dancing"
+			>
 				<picture>
-					<source media="(prefers-reduced-motion: reduce)" srcset="/decor/niko-still.png" />
-					<img class="pixelated" src="/decor/niko.gif" alt="" width="48" height="48" loading="lazy" />
+					<source
+						media="(prefers-reduced-motion: reduce)"
+						srcset="/decor/niko-still.png"
+					/>
+					<img
+						class="pixelated"
+						src="/decor/niko.gif"
+						alt=""
+						width="48"
+						height="48"
+						loading="lazy"
+					/>
 				</picture>
 			</button>
-			<button class="trinket" type="button" data-egg="trinket" aria-label="An egg" data-trinket hidden>
-				<svg viewBox="0 0 12 14" width="18" height="21" shape-rendering="crispEdges" aria-hidden="true">
-					<path fill="#13060c" d="M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v2H1zM10 2h1v2h-1zM0 4h1v6H0zM11 4h1v6h-1zM1 10h1v2H1zM10 10h1v2h-1zM2 12h2v1H2zM8 12h2v1H8zM4 13h4v1H4z"></path>
-					<path fill="#fff6dc" d="M4 1h4v1h2v2h1v6h-1v2H8v1H4v-1H2v-2H1V4h1V2h2z"></path>
+			<button
+				class="trinket"
+				type="button"
+				data-egg="trinket"
+				aria-label="An egg"
+				data-trinket
+				hidden
+			>
+				<svg
+					viewBox="0 0 12 14"
+					width="18"
+					height="21"
+					shape-rendering="crispEdges"
+					aria-hidden="true"
+				>
+					<path
+						fill="#13060c"
+						d="M4 0h4v1H4zM2 1h2v1H2zM8 1h2v1H8zM1 2h1v2H1zM10 2h1v2h-1zM0 4h1v6H0zM11 4h1v6h-1zM1 10h1v2H1zM10 10h1v2h-1zM2 12h2v1H2zM8 12h2v1H8zM4 13h4v1H4z"
+					></path>
+					<path
+						fill="#fff6dc"
+						d="M4 1h4v1h2v2h1v6h-1v2H8v1H4v-1H2v-2H1V4h1V2h2z"
+					></path>
 					<path fill="#e9d6a8" d="M8 9h2v1H8zM6 11h3v1H6z"></path>
 				</svg>
 			</button>
@@ -51,9 +134,15 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 		<p class="fine">
 			© {built.getFullYear()} Nicolas (mrnico12) · last updated {updated}
 			<br />
+			Made by <a href="https://wawi.kodeko.org">Chewawi</a> · want a website
+			like this? contact me!
+			<br />
+			<br />
 			<span class="credits">
-				the yellow dog, the niko gif, sunflower, signs, pins and the other stickers are found on the internet. the slugcat and the
-				karma symbol are from Rain World by Videocult, via the Rain World Wiki
+				the yellow dog, the niko gif, sunflower, signs, pins and the
+				other stickers are found on the internet. the slugcat and the
+				karma symbol are from Rain World by Videocult, via the Rain
+				World Wiki
 			</span>
 		</p>
 	</div>
@@ -102,6 +191,15 @@ const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'shor
 		gap: 5px;
 		background: #f2f2ec;
 		color: #0038a8;
+		text-align: left;
+	}
+
+	.b-kodeko {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		justify-content: center;
+		background: #ff7c6d;
 		text-align: left;
 	}
 

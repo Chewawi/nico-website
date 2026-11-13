@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { ADMIN_PASSWORD, TURNSTILE_SECRET_KEY, TURNSTILE_SITE_KEY } from 'astro:env/server';
 
 export const CANVAS = { width: 480, height: 360 } as const;
 export const LIMITS = { bytes: 200_000, name: 40, message: 200, pending: 200, perPage: 24 } as const;
@@ -10,8 +10,6 @@ export interface Entry {
 	message: string;
 	status: 'pending' | 'approved';
 }
-
-export const db = () => env.DB;
 
 export const json = (body: unknown, status = 200) =>
 	new Response(JSON.stringify(body), {
@@ -34,11 +32,14 @@ export function isCanvasPng(b: Uint8Array) {
 	return view.getUint32(16) === CANVAS.width && view.getUint32(20) === CANVAS.height;
 }
 
+/** Turnstile's site key, or undefined when the robot check is off (it needs both keys). */
+export const robotCheck = () => (TURNSTILE_SECRET_KEY && TURNSTILE_SITE_KEY) || undefined;
+
 export async function verifyTurnstile(token: FormDataEntryValue | null, ip: string | null) {
-	const secret = env.TURNSTILE_SECRET_KEY;
-	if (!secret || typeof token !== 'string' || !token) return false;
+	if (!robotCheck()) return true;
+	if (typeof token !== 'string' || !token) return false;
 	const body = new FormData();
-	body.append('secret', secret);
+	body.append('secret', TURNSTILE_SECRET_KEY!);
 	body.append('response', token);
 	if (ip) body.append('remoteip', ip);
 	const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body });
@@ -47,7 +48,7 @@ export async function verifyTurnstile(token: FormDataEntryValue | null, ip: stri
 }
 
 export function isAdmin(request: Request) {
-	const password = env.ADMIN_PASSWORD;
+	const password = ADMIN_PASSWORD;
 	const header = request.headers.get('authorization') ?? '';
 	if (!password || !header.startsWith('Basic ')) return false;
 	let given = '';
